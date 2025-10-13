@@ -1,4 +1,3 @@
-// FIX: Removed self-import of `Direction`.
 export enum Direction {
   Up,
   Down,
