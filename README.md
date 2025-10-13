@@ -1,1 +1,82 @@
-placeholder
+# Liminal
+
+Liminal is a fast-paced arcade game that tests your reflexes and pushes you deeper into an atmospheric, ever-changing world. The core mechanic is simple: swipe in the correct direction before time runs out. As your score increases, the game's atmosphere shifts, the music intensifies, and the challenges become more complex.
+
+## Features
+
+- **Dynamic Difficulty:** The game's speed and complexity increase as you progress, providing a continuous challenge.
+- **Atmospheric Experience:** The game's visuals and audio evolve as you reach new score milestones, creating an immersive and captivating experience.
+- **Joker Cards:** Occasionally, a "joker" card will appear, requiring you to swipe in the opposite direction.
+- **Multiplier System:** The better you perform, the higher your score multiplier, rewarding you for your skill.
+- **On-Chain Leaderboard:** Compete against other players and see how your score stacks up on the global leaderboard, powered by a secure and transparent smart contract.
+- **"Reset Strikes" Power-up:** Made a few mistakes? Use the "Reset Strikes" power-up to get a second chance by paying a small fee in ETH.
+
+## How to Play
+
+1.  **Connect Your Wallet:** Click the "Connect Wallet" button to connect your MetaMask wallet.
+2.  **Start the Game:** Click the "Start Game" button to begin.
+3.  **Swipe:** Swipe the cards in the direction they indicate.
+4.  **Joker Cards:** If a joker card appears, swipe in the opposite direction.
+5.  **Strikes:** You have three strikes. If you make a mistake or run out of time, you'll lose a strike.
+6.  **Game Over:** The game ends when you lose all three strikes.
+7.  **Submit Your Score:** After the game ends, you can submit your score to the on-chain leaderboard.
+8.  **Reset Strikes:** If you have strikes and your wallet is connected, you can use the "Reset Strikes" power-up to reset your strikes to zero.
+
+## Getting Started
+
+To get started with Liminal, you'll need to have Node.js, npm, and Foundry installed.
+
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/your-username/liminal.git
+    ```
+2.  **Install Frontend Dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Install Smart Contract Dependencies:**
+    ```bash
+    cd my-contracts
+    forge install
+    cd ..
+    ```
+4.  **Deploy the Smart Contracts:**
+    -   Create a `.env` file in the `my-contracts` directory and add the following:
+        ```
+        PRIVATE_KEY=<your-private-key>
+        RPC_URL=<your-rpc-url>
+        ```
+    -   Deploy the contracts:
+        ```bash
+        cd my-contracts
+        forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+        cd ..
+        ```
+5.  **Update Contract Addresses:**
+    -   Run the `update-config.js` script to automatically update the contract addresses in the frontend:
+        ```bash
+        node scripts/update-config.js
+        ```
+6.  **Run the Game:**
+    ```bash
+    npm run dev
+    ```
+
+## Smart Contracts
+
+Liminal uses two smart contracts to manage the leaderboard and the "Reset Strikes" power-up.
+
+-   **Leaderboard Contract:** This contract stores the leaderboard data and allows users to submit their scores.
+-   **"Reset Strikes" Contract:** This contract allows users to reset their strikes by paying a small fee in ETH.
+
+### Deployment
+
+The smart contracts can be deployed using the `Deploy.s.sol` script in the `my-contracts/script` directory. After deployment, the contract addresses are automatically updated in the frontend by running the `update-config.js` script.
+
+## Contributing
+
+We welcome contributions to Liminal! If you'd like to contribute, please fork the repository and submit a pull request.
+
+## License
+
+Liminal is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).

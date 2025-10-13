@@ -12,6 +12,8 @@ import { StrikesDisplay } from './components/game/StrikesDisplay';
 import { InfoIcon } from './components/ui/icons';
 import { AtmosphereManager } from './systems/AtmosphereManager';
 import { AudioManager, AudioManagerHandle } from './systems/AudioManager';
+import { ethers } from 'ethers';
+import { LEADERBOARD_CONTRACT_ADDRESS, RESET_STRIKES_CONTRACT_ADDRESS, LEADERBOARD_ABI, RESET_STRIKES_ABI } from './contract-config';
 
 const TOTAL_SCORE_KEY = 'liminalTotalScore';
 const JOKER_CHANCE = 0.15; // 15% chance for a joker card
@@ -59,26 +61,44 @@ export default function App() {
   const [isSfxMuted, setIsSfxMuted] = useState(false);
   const [showGlitch, setShowGlitch] = useState(false);
   const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
+  const [wallet, setWallet] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
+  const [leaderboardContract, setLeaderboardContract] = useState<ethers.Contract | null>(null);
+  const [resetStrikesContract, setResetStrikesContract] = useState<ethers.Contract | null>(null);
+  const [gameId, setGameId] = useState(0);
 
 
   const timerId = useRef<number | null>(null);
   const audioManagerRef = useRef<AudioManagerHandle>(null);
   const glitchIntervalRef = useRef<number | null>(null);
-  const keydownProcessed = useRef(false);
+  const swipeProcessed = useRef(false);
 
   useEffect(() => {
-    try {
-      const storedTotalScore = localStorage.getItem(TOTAL_SCORE_KEY);
-      if (storedTotalScore) setTotalScore(JSON.parse(storedTotalScore));
-      
-      const storedMusicMute = localStorage.getItem('liminalMusicMuted');
-      if (storedMusicMute) setIsMusicMuted(JSON.parse(storedMusicMute));
+    const storedTotalScore = localStorage.getItem(TOTAL_SCORE_KEY);
+    if (storedTotalScore) {
+        try {
+            setTotalScore(JSON.parse(storedTotalScore));
+        } catch (e) {
+            console.error("Failed to parse total score from localStorage", e);
+        }
+    }
 
-      const storedSfxMute = localStorage.getItem('liminalSfxMuted');
-      if (storedSfxMute) setIsSfxMuted(JSON.parse(storedSfxMute));
+    const storedMusicMute = localStorage.getItem('liminalMusicMuted');
+    if (storedMusicMute) {
+        try {
+            setIsMusicMuted(JSON.parse(storedMusicMute));
+        } catch (e) {
+            console.error("Failed to parse music mute setting from localStorage", e);
+        }
+    }
 
-    } catch (error) {
-      console.error("Failed to load from localStorage", error);
+    const storedSfxMute = localStorage.getItem('liminalSfxMuted');
+    if (storedSfxMute) {
+        try {
+            setIsSfxMuted(JSON.parse(storedSfxMute));
+        } catch (e) {
+            console.error("Failed to parse SFX mute setting from localStorage", e);
+        }
     }
   }, []);
 
@@ -107,16 +127,41 @@ export default function App() {
     };
   }, [atmosphereStage, triggerGlitch]);
 
+  const connectWallet = useCallback(async () => {
+    if (window.ethereum) {
+        try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = await provider.getSigner();
+
+            const leaderboard = new ethers.Contract(LEADERBOARD_CONTRACT_ADDRESS, LEADERBOARD_ABI, signer);
+            const resetStrikes = new ethers.Contract(RESET_STRIKES_CONTRACT_ADDRESS, RESET_STRIKES_ABI, signer);
+
+            setWallet(provider);
+            setSigner(signer);
+            setLeaderboardContract(leaderboard);
+            setResetStrikesContract(resetStrikes);
+        } catch (error: any) {
+            if (error.code === 4001) {
+                alert("Wallet connection request was rejected. Please approve the connection in your wallet to continue.");
+            } else {
+                console.error("Failed to connect wallet", error);
+            }
+        }
+    } else {
+        alert("Please install MetaMask!");
+    }
+  }, []);
 
   const handleSubmitScore = useCallback(async () => {
-    if (submissionState !== 'idle') return;
+    if (submissionState !== 'idle' || !leaderboardContract) return;
 
     setSubmissionState('pending');
     
-    // Simulate async on-chain validation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     try {
+        const tx = await leaderboardContract.submitScore(score, gameId);
+        await tx.wait();
+
         const newTotalScore = totalScore + score;
         setTotalScore(newTotalScore);
         localStorage.setItem(TOTAL_SCORE_KEY, JSON.stringify(newTotalScore));
@@ -125,7 +170,7 @@ export default function App() {
         console.error("Failed to submit score:", error);
         setSubmissionState('error');
     }
-  }, [score, totalScore, submissionState]);
+  }, [score, totalScore, submissionState, leaderboardContract, gameId]);
   
   const getCardTime = useCallback(() => {
     if (correctSwipes >= SWIPES_MIN) {
@@ -149,7 +194,7 @@ export default function App() {
 
   const generateNextCard = useCallback(() => {
       triggerGlitch();
-      keydownProcessed.current = false; // Allow next key press
+      swipeProcessed.current = false; // Allow next swipe
       setKeyboardSwipeOutDirection(null); // Reset keyboard swipe trigger
       setCurrentDirection(getRandomDirection());
       setIsJoker(Math.random() < JOKER_CHANCE);
@@ -172,26 +217,30 @@ export default function App() {
     return () => {
       if (timerId.current) clearTimeout(timerId.current);
     };
-  }, [gameState, cardKey, getCardTime]);
+  }, [gameState, cardKey, getCardTime, handleIncorrectSwipe]);
 
   const handleCorrectSwipe = useCallback(() => {
+    if (swipeProcessed.current) return;
+    swipeProcessed.current = true;
     if (timerId.current) clearTimeout(timerId.current);
     audioManagerRef.current?.playCorrectSwipe();
     
     const newCorrectSwipes = correctSwipes + 1;
     setCorrectSwipes(newCorrectSwipes);
     
-    let currentMultiplier = 1;
-    if (newCorrectSwipes > 100) {
-      currentMultiplier = 1 + Math.floor((newCorrectSwipes - 100) / 50) + 1;
-    }
-    setMultiplier(currentMultiplier);
+    // FIX: Simplified and corrected multiplier logic.
+    // The multiplier increases by 1 for every 50 correct swipes.
+    // e.g., 0-49 -> 1x, 50-99 -> 2x, 100-149 -> 3x
+    const newMultiplier = 1 + Math.floor(newCorrectSwipes / 50);
+    setMultiplier(newMultiplier);
     
-    setScore(prev => prev + (1 * currentMultiplier));
+    setScore(prev => prev + (1 * newMultiplier));
     generateNextCard();
   }, [correctSwipes, generateNextCard]);
 
   const handleIncorrectSwipe = useCallback((isTimeout = false) => {
+    if (swipeProcessed.current) return;
+    swipeProcessed.current = true;
     if (timerId.current) clearTimeout(timerId.current);
     audioManagerRef.current?.playWrongSwipe();
 
@@ -206,7 +255,7 @@ export default function App() {
   }, [strikes, handleGameOver, generateNextCard]);
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (gameState !== GameState.Playing || keydownProcessed.current) return;
+    if (gameState !== GameState.Playing || swipeProcessed.current) return;
 
     let swipedDirection: Direction | null = null;
     switch (event.key) {
@@ -218,7 +267,7 @@ export default function App() {
     }
     
     event.preventDefault();
-    keydownProcessed.current = true; // Prevent multiple key presses for one card
+    swipeProcessed.current = true; // Prevent multiple key presses for one card
 
     const targetDirection = isJoker ? getOppositeDirection(currentDirection) : currentDirection;
     
@@ -248,8 +297,9 @@ export default function App() {
     setIsJoker(false);
     setSubmissionState('idle');
     setCardKey(prev => prev + 1);
-    keydownProcessed.current = false;
+    swipeProcessed.current = false;
     setGameState(GameState.Playing);
+    setGameId(prevGameId => prevGameId + 1); // Use a simple counter for unique game IDs
   };
   
   const toggleMusicMute = () => {
@@ -263,6 +313,26 @@ export default function App() {
       setIsSfxMuted(newMuteState);
       localStorage.setItem('liminalSfxMuted', JSON.stringify(newMuteState));
   };
+
+  const [resetStrikesState, setResetStrikesState] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+
+  const handleResetStrikes = useCallback(async () => {
+    if (!resetStrikesContract || resetStrikesState === 'pending') return;
+
+    setResetStrikesState('pending');
+    try {
+        const price = await resetStrikesContract.price();
+        const tx = await resetStrikesContract.resetStrikes({ value: price });
+        await tx.wait();
+        setStrikes(0);
+        setResetStrikesState('success');
+        alert('Strikes reset successfully!');
+    } catch (error) {
+        console.error("Failed to reset strikes:", error);
+        setResetStrikesState('error');
+        alert('Failed to reset strikes. Please try again.');
+    }
+  }, [resetStrikesContract, resetStrikesState]);
   
   const renderGameState = () => {
     switch (gameState) {
@@ -292,19 +362,29 @@ export default function App() {
       case GameState.GameOver:
         return <GameOverScreen score={score} onPlayAgain={startGame} onSubmitScore={handleSubmitScore} submissionState={submissionState} />;
       case GameState.Leaderboard:
-        return <LeaderboardScreen totalScore={totalScore} onBack={() => setGameState(GameState.Start)} />;
+        return <LeaderboardScreen onBack={() => setGameState(GameState.Start)} />;
       case GameState.Start:
       default:
         return (
           <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in">
             <h1 className="text-8xl font-black mb-4 text-glitter">Liminal</h1>
             <p className="text-2xl mb-12 max-w-md text-shadow-pop">The deeper you go, the more it changes. Three strikes. Good luck.</p>
-            <button
-              onClick={startGame}
-              className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
-            >
-              Start Game
-            </button>
+            <div className="flex gap-4">
+                <button
+                onClick={startGame}
+                className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+                >
+                Start Game
+                </button>
+                {wallet && strikes > 0 && (
+                    <button
+                        onClick={handleResetStrikes}
+                        className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+                    >
+                        Reset Strikes (0.0001 ETH)
+                    </button>
+                )}
+            </div>
           </div>
         );
     }
@@ -313,6 +393,11 @@ export default function App() {
   const showLeaderboardButton = gameState === GameState.Start || gameState === GameState.GameOver;
   const showInfoButton = gameState === GameState.Start;
   const showAudioControls = gameState === GameState.Start;
+
+  useEffect(() => {
+    // Attempt to connect wallet on component mount
+    connectWallet();
+  }, []);
 
   return (
     <main className="w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black">
@@ -328,14 +413,25 @@ export default function App() {
 
       {isInfoVisible && <InfoScreen onClose={() => setInfoVisible(false)} />}
       
-      {showLeaderboardButton && (
-        <button
-          onClick={() => setGameState(GameState.Leaderboard)}
-          className="absolute top-4 right-4 bg-black/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black/40 transition-colors text-shadow-pop border-2 border-white/20 backdrop-blur-sm z-10"
-        >
-          Leaderboard
-        </button>
-      )}
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
+            {showLeaderboardButton && (
+                <button
+                onClick={() => setGameState(GameState.Leaderboard)}
+                className="bg-black/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black/40 transition-colors text-shadow-pop border-2 border-white/20 backdrop-blur-sm"
+                >
+                Leaderboard
+                </button>
+            )}
+            {!wallet && (
+                <button
+                onClick={connectWallet}
+                className="bg-black/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black/40 transition-colors text-shadow-pop border-2 border-white/20 backdrop-blur-sm"
+                >
+                Connect Wallet
+                </button>
+            )}
+      </div>
+
 
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         {showInfoButton && (
