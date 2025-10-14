@@ -123,7 +123,7 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
             } else {
                 // Incorrect Swipe: Trigger haptics and snap back, then notify parent.
                 if (navigator.vibrate) {
-                    navigator.vibrate([50, 30, 50]);
+                    navigator.vibrate([70, 50, 70]);
                 }
                 setTimeout(onIncorrectSwipe, 150);
                 setPosition({ x: 0, y: 0 }); 

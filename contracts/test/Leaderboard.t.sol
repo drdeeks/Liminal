@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "forge-std/Test.sol";
+import "../src/Leaderboard.sol";
+
+contract LeaderboardTest is Test {
+    Leaderboard leaderboard;
+
+    function setUp() public {
+        leaderboard = new Leaderboard();
+    }
+
+    function testSubmitScore() public {
+        vm.prank(address(1));
+        leaderboard.submitScore(100, 1);
+        (address[] memory addrs, uint256[] memory scores) = leaderboard.getLeaderboard(0, 1);
+        assertEq(addrs[0], address(1));
+        assertEq(scores[0], 100);
+    }
+
+    function testSubmitScore_ReplayAttack() public {
+        vm.prank(address(1));
+        leaderboard.submitScore(100, 1);
+        vm.prank(address(1));
+        vm.expectRevert(bytes("Score already submitted for this game"));
+        leaderboard.submitScore(100, 1);
+    }
+
+    function testGetLeaderboard_Pagination() public {
+        for (uint256 i = 0; i < 25; i++) {
+            vm.prank(address(uint160(i + 1)));
+            leaderboard.submitScore(i + 1, 1);
+        }
+
+        (address[] memory addrs, uint256[] memory scores) = leaderboard.getLeaderboard(1, 10);
+        assertEq(addrs.length, 10);
+        assertEq(scores.length, 10);
+        assertEq(addrs[0], address(11));
+        assertEq(scores[0], 11);
+    }
+}
