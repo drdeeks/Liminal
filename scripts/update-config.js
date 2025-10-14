@@ -3,7 +3,7 @@ import path from 'path';
 
 const __dirname = path.resolve();
 
-const addressesPath = path.resolve(__dirname, 'contracts/deployed-addresses.json');
+const addressesPath = path.resolve(__dirname, 'my-contracts/deployed-addresses.json');
 const configPath = path.resolve(__dirname, 'src/contract-config.ts');
 
 const addresses = JSON.parse(fs.readFileSync(addressesPath, 'utf8'));

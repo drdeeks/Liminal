@@ -208,6 +208,19 @@ export default function App() {
       setAtmosphereStage(newStage);
   }, [score]);
 
+  useEffect(() => {
+    if (gameState === GameState.Playing) {
+      if (timerId.current) clearTimeout(timerId.current);
+      const duration = getCardTime();
+      timerId.current = window.setTimeout(() => handleIncorrectSwipe(true), duration);
+    } else {
+      if (timerId.current) clearTimeout(timerId.current);
+    }
+    return () => {
+      if (timerId.current) clearTimeout(timerId.current);
+    };
+  }, [gameState, cardKey, getCardTime, handleIncorrectSwipe]);
+
   const handleCorrectSwipe = useCallback(() => {
     if (swipeProcessed.current) return;
     swipeProcessed.current = true;
@@ -397,7 +410,8 @@ export default function App() {
   const showAudioControls = gameState === GameState.Start;
 
   useEffect(() => {
-    // Do not automatically connect wallet on component mount
+    // Attempt to connect wallet on component mount
+    connectWallet();
   }, []);
 
   return (
