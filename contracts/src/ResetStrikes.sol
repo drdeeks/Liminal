@@ -11,6 +11,9 @@ import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 contract ResetStrikes is Ownable, ReentrancyGuard {
     uint256 public price;
 
+    error IncorrectPaymentAmount(uint256 sent, uint256 required);
+    error WithdrawalFailed();
+
     event StrikesReset(address indexed player);
 
     constructor(uint256 _initialPrice) Ownable(msg.sender) {
@@ -21,7 +24,9 @@ contract ResetStrikes is Ownable, ReentrancyGuard {
      * @dev Allows a user to reset their strikes by paying the required fee.
      */
     function resetStrikes() external payable nonReentrant {
-        require(msg.value == price, "Incorrect payment amount");
+        if (msg.value != price) {
+            revert IncorrectPaymentAmount(msg.value, price);
+        }
 
         // Here you would typically interact with your game's main contract
         // to reset the strikes for the player. For this example, we'll just
@@ -41,6 +46,9 @@ contract ResetStrikes is Ownable, ReentrancyGuard {
      * @dev Allows the owner to withdraw the contract's balance.
      */
     function withdraw() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+        (bool success, ) = owner().call{value: address(this).balance}("");
+        if (!success) {
+            revert WithdrawalFailed();
+        }
     }
 }

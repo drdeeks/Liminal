@@ -40,25 +40,27 @@ To get started with Liminal, you'll need to have Node.js, npm, and Foundry insta
     forge install
     cd ..
     ```
-4.  **Deploy the Smart Contracts:**
-    -   Create a `.env` file in the `contracts` directory and add the following:
-        ```
-        PRIVATE_KEY=<your-private-key>
-        RPC_URL=<your-rpc-url>
-        ETHERSCAN_API_KEY=<your-etherscan-api-key>
-        ```
-    -   Run the deployment script:
-        ```bash
-        npm run deploy
-        ```
-        This will deploy the contracts and automatically update the frontend configuration with the new contract addresses.
-5.  **Verify the Smart Contracts:**
-    -   After deploying the contracts, you can verify them on Etherscan by running the following command for each contract:
+4.  **Create a Keystore:**
+    -   If you don't have a keystore, you can create one by running the following command from the `contracts` directory:
         ```bash
         cd contracts
-        forge verify-contract --chain-id <chain-id> <contract-address> <contract-name> --etherscan-api-key $ETHERSCAN_API_KEY
-        cd ..
+        cast wallet new
         ```
+    -   This will generate a new private key and an address. Follow the prompts to create a password for your keystore.
+5.  **Deploy the Smart Contracts to Monad Testnet:**
+    -   Run the deployment script from the `contracts` directory, replacing `my-keystore-name` with the name of your keystore account:
+        ```bash
+        cd contracts
+        forge script script/DeployMonad.s.sol --rpc-url monad --account my-keystore-name --broadcast
+        ```
+    -   This will deploy the contracts to the Monad Testnet. The script will also create a `monad-deployed-addresses.json` file in the `contracts` directory with the new contract addresses.
+6.  **Verify the Smart Contracts:**
+    -   After deploying, you can verify each contract on the Monad block explorer using the following command:
+        ```bash
+        forge verify-contract <contract-address> <contract-path>:<contract-name> --chain-id 10143 --verifier sourcify --verifier-url https://sourcify-api-monad.blockvision.org
+        ```
+7.  **Update Frontend Configuration:**
+    - You will need to manually update the frontend configuration with the new contract addresses from the `monad-deployed-addresses.json` file.
 6.  **Run the Game:**
     ```bash
     npm run dev
@@ -66,14 +68,20 @@ To get started with Liminal, you'll need to have Node.js, npm, and Foundry insta
 
 ## Smart Contracts
 
-The smart contract source code is located in the `contracts/src` directory. The contracts are managed and deployed using Foundry.
+The smart contracts are organized in the `contracts` directory, following a standard Foundry project structure:
 
+-   `src/`: Contains the core smart contract source code (`Counter.sol`, `Leaderboard.sol`, `ResetStrikes.sol`).
+-   `script/`: Contains the deployment scripts (`DeployMonad.s.sol`).
+-   `test/`: Contains the tests for the smart contracts.
+-   `lib/`: Contains third-party libraries, such as OpenZeppelin contracts.
+
+The main contracts are:
 -   **Leaderboard Contract:** This contract stores the leaderboard data and allows users to submit their scores.
 -   **"Reset Strikes" Contract:** This contract allows users to reset their strikes by paying a small fee in ETH.
 
 ### Deployment and Verification
 
-The smart contracts can be deployed by running the `npm run deploy` command. This command executes the `Deploy.s.sol` script in the `contracts/script` directory and then runs the `scripts/update-config.js` script to update the frontend configuration. After deployment, the contracts can be verified on Etherscan by running the `forge verify-contract` command.
+The smart contracts can be deployed to the Monad Testnet by running the `forge script` command from within the `contracts` directory. The `DeployMonad.s.sol` script handles both the deployment and automatic verification of the contracts.
 
 ## Contributing
 
