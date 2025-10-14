@@ -21,7 +21,7 @@ contract ResetStrikesTest is Test {
     function testResetStrikes_IncorrectPayment() public {
         vm.deal(address(1), 1 ether);
         vm.prank(address(1));
-        vm.expectRevert("Incorrect payment amount");
+        vm.expectRevert(abi.encodeWithSelector(ResetStrikes.IncorrectPaymentAmount.selector, 0.0002 ether, 0.0001 ether));
         resetStrikes.resetStrikes{value: 0.0002 ether}();
     }
 
