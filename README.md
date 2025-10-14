@@ -36,26 +36,28 @@ To get started with Liminal, you'll need to have Node.js, npm, and Foundry insta
     ```
 3.  **Install Smart Contract Dependencies:**
     ```bash
-    cd my-contracts
+    cd contracts
     forge install
     cd ..
     ```
 4.  **Deploy the Smart Contracts:**
-    -   Create a `.env` file in the `my-contracts` directory and add the following:
+    -   Create a `.env` file in the `contracts` directory and add the following:
         ```
         PRIVATE_KEY=<your-private-key>
         RPC_URL=<your-rpc-url>
+        ETHERSCAN_API_KEY=<your-etherscan-api-key>
         ```
-    -   Deploy the contracts:
+    -   Run the deployment script:
         ```bash
-        cd my-contracts
-        forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+        npm run deploy
+        ```
+        This will deploy the contracts and automatically update the frontend configuration with the new contract addresses.
+5.  **Verify the Smart Contracts:**
+    -   After deploying the contracts, you can verify them on Etherscan by running the following command for each contract:
+        ```bash
+        cd contracts
+        forge verify-contract --chain-id <chain-id> <contract-address> <contract-name> --etherscan-api-key $ETHERSCAN_API_KEY
         cd ..
-        ```
-5.  **Update Contract Addresses:**
-    -   Run the `update-config.js` script to automatically update the contract addresses in the frontend:
-        ```bash
-        node scripts/update-config.js
         ```
 6.  **Run the Game:**
     ```bash
@@ -64,14 +66,14 @@ To get started with Liminal, you'll need to have Node.js, npm, and Foundry insta
 
 ## Smart Contracts
 
-Liminal uses two smart contracts to manage the leaderboard and the "Reset Strikes" power-up.
+The smart contract source code is located in the `contracts/src` directory. The contracts are managed and deployed using Foundry.
 
 -   **Leaderboard Contract:** This contract stores the leaderboard data and allows users to submit their scores.
 -   **"Reset Strikes" Contract:** This contract allows users to reset their strikes by paying a small fee in ETH.
 
-### Deployment
+### Deployment and Verification
 
-The smart contracts can be deployed using the `Deploy.s.sol` script in the `my-contracts/script` directory. After deployment, the contract addresses are automatically updated in the frontend by running the `update-config.js` script.
+The smart contracts can be deployed by running the `npm run deploy` command. This command executes the `Deploy.s.sol` script in the `contracts/script` directory and then runs the `scripts/update-config.js` script to update the frontend configuration. After deployment, the contracts can be verified on Etherscan by running the `forge verify-contract` command.
 
 ## Contributing
 
