@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 # Foundry
-my-contracts/
+contracts/out/
+contracts/cache/

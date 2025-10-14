@@ -208,38 +208,6 @@ export default function App() {
       setAtmosphereStage(newStage);
   }, [score]);
 
-  useEffect(() => {
-    if (gameState === GameState.Playing) {
-      if (timerId.current) clearTimeout(timerId.current);
-      const duration = getCardTime();
-      timerId.current = window.setTimeout(() => handleIncorrectSwipe(true), duration);
-    } else {
-      if (timerId.current) clearTimeout(timerId.current);
-    }
-    return () => {
-      if (timerId.current) clearTimeout(timerId.current);
-    };
-  }, [gameState, cardKey, getCardTime, handleIncorrectSwipe]);
-
-  const handleCorrectSwipe = useCallback(() => {
-    if (swipeProcessed.current) return;
-    swipeProcessed.current = true;
-    if (timerId.current) clearTimeout(timerId.current);
-    audioManagerRef.current?.playCorrectSwipe();
-    
-    const newCorrectSwipes = correctSwipes + 1;
-    setCorrectSwipes(newCorrectSwipes);
-    
-    // FIX: Simplified and corrected multiplier logic.
-    // The multiplier increases by 1 for every 50 correct swipes.
-    // e.g., 0-49 -> 1x, 50-99 -> 2x, 100-149 -> 3x
-    const newMultiplier = 1 + Math.floor(newCorrectSwipes / 50);
-    setMultiplier(newMultiplier);
-    
-    setScore(prev => prev + (1 * newMultiplier));
-    generateNextCard();
-  }, [correctSwipes, generateNextCard]);
-
   const handleIncorrectSwipe = useCallback((isTimeout = false) => {
     if (swipeProcessed.current) return;
     swipeProcessed.current = true;
@@ -248,7 +216,7 @@ export default function App() {
 
     const newStrikes = strikes + 1;
     setStrikes(newStrikes);
-    
+
     if (newStrikes >= 3) {
       handleGameOver();
     } else {
@@ -256,18 +224,24 @@ export default function App() {
     }
   }, [strikes, handleGameOver, generateNextCard]);
 
-  useEffect(() => {
-    if (gameState === GameState.Playing) {
-      if (timerId.current) clearTimeout(timerId.current);
-      const duration = getCardTime();
-      timerId.current = window.setTimeout(() => handleIncorrectSwipe(true), duration);
-    } else {
-      if (timerId.current) clearTimeout(timerId.current);
-    }
-    return () => {
-      if (timerId.current) clearTimeout(timerId.current);
-    };
-  }, [gameState, cardKey, getCardTime, handleIncorrectSwipe]);
+  const handleCorrectSwipe = useCallback(() => {
+    if (swipeProcessed.current) return;
+    swipeProcessed.current = true;
+    if (timerId.current) clearTimeout(timerId.current);
+    audioManagerRef.current?.playCorrectSwipe();
+
+    const newCorrectSwipes = correctSwipes + 1;
+    setCorrectSwipes(newCorrectSwipes);
+
+    // FIX: Simplified and corrected multiplier logic.
+    // The multiplier increases by 1 for every 50 correct swipes.
+    // e.g., 0-49 -> 1x, 50-99 -> 2x, 100-149 -> 3x
+    const newMultiplier = 1 + Math.floor(newCorrectSwipes / 50);
+    setMultiplier(newMultiplier);
+
+    setScore(prev => prev + (1 * newMultiplier));
+    generateNextCard();
+  }, [correctSwipes, generateNextCard]);
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (gameState !== GameState.Playing || swipeProcessed.current) return;
@@ -410,8 +384,7 @@ export default function App() {
   const showAudioControls = gameState === GameState.Start;
 
   useEffect(() => {
-    // Attempt to connect wallet on component mount
-    connectWallet();
+    // Do not automatically connect wallet on component mount
   }, []);
 
   return (
