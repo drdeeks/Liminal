@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "cd contracts && forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast && cd .. && node scripts/update-config.js"
+    "deploy": "cd my-contracts && forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast && cd .. && node scripts/update-config.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",

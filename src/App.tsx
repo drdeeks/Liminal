@@ -397,7 +397,8 @@ export default function App() {
   const showAudioControls = gameState === GameState.Start;
 
   useEffect(() => {
-    // Do not automatically connect wallet on component mount
+    // Attempt to connect wallet on component mount
+    connectWallet();
   }, []);
 
   return (
