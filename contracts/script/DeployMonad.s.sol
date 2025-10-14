@@ -10,7 +10,12 @@ import "../src/ResetStrikes.sol";
 
 contract DeployMonad is Script {
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        if (deployerPrivateKey == 0) {
+            revert("No private key found. Set the PRIVATE_KEY environment variable.");
+        }
+
+        vm.startBroadcast(deployerPrivateKey);
 
         Counter counter = new Counter();
         console.log("Counter deployed to:", address(counter));
@@ -23,12 +28,10 @@ contract DeployMonad is Script {
 
         vm.stopBroadcast();
 
-        // The verification will be done via command line after the script runs
-        console.log("Contracts deployed successfully. Please verify them manually.");
-        console.log("Counter address:", vm.toString(address(counter)));
-        console.log("Leaderboard address:", vm.toString(address(leaderboard)));
-        console.log("ResetStrikes address:", vm.toString(address(resetStrikes)));
-
+        // Automatic verification
+        verifyContract("src/Counter.sol:Counter", address(counter));
+        verifyContract("src/Leaderboard.sol:Leaderboard", address(leaderboard));
+        verifyContract("src/ResetStrikes.sol:ResetStrikes", address(resetStrikes));
 
         string memory addresses = string(abi.encodePacked(
             '{"counter": "',
@@ -42,5 +45,21 @@ contract DeployMonad is Script {
 
         string memory path = "./monad-deployed-addresses.json";
         vm.writeFile(path, addresses);
+    }
+
+    function verifyContract(string memory contractInfo, address addr) internal {
+        string[] memory args = new string[](10);
+        args[0] = "forge";
+        args[1] = "verify-contract";
+        args[2] = vm.toString(addr);
+        args[3] = contractInfo;
+        args[4] = "--chain-id";
+        args[5] = "10143";
+        args[6] = "--verifier";
+        args[7] = "sourcify";
+        args[8] = "--verifier-url";
+        args[9] = "https://sourcify-api-monad.blockvision.org";
+
+        vm.ffi(args);
     }
 }
