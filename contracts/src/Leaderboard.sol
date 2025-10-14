@@ -13,6 +13,7 @@ contract Leaderboard is Ownable, ReentrancyGuard {
     struct Player {
         uint256 score;
         uint256 lastSubmissionGameId;
+        bool exists;
     }
 
     mapping(address => Player) public players;
@@ -35,8 +36,9 @@ contract Leaderboard is Ownable, ReentrancyGuard {
         // Ensure that a score for this specific game session hasn't been submitted before.
         require(_gameId > player.lastSubmissionGameId, "Score already submitted for this game");
 
-        if (player.score == 0) {
+        if (!player.exists) {
             // Add new player to index if they are not already on the leaderboard
+            player.exists = true;
             playerIndex.push(msg.sender);
         }
 
@@ -62,7 +64,10 @@ contract Leaderboard is Ownable, ReentrancyGuard {
         require(_pageSize > 0, "Page size must be positive");
         uint256 playerCount = playerIndex.length;
         uint256 startIndex = _page * _pageSize;
-        require(startIndex < playerCount, "Page out of bounds");
+
+        if (startIndex >= playerCount) {
+            return (new address[](0), new uint256[](0));
+        }
 
         uint256 endIndex = startIndex + _pageSize;
         if (endIndex > playerCount) {
