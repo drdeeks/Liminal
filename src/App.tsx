@@ -166,9 +166,11 @@ export default function App() {
         setTotalScore(newTotalScore);
         localStorage.setItem(TOTAL_SCORE_KEY, JSON.stringify(newTotalScore));
         setSubmissionState('success');
+        alert('Score submitted successfully!');
     } catch (error) {
         console.error("Failed to submit score:", error);
         setSubmissionState('error');
+        alert('Failed to submit score. Please try again.');
     }
   }, [score, totalScore, submissionState, leaderboardContract, gameId]);
   
