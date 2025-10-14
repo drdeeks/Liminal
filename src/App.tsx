@@ -255,6 +255,19 @@ export default function App() {
       generateNextCard();
     }
   }, [strikes, handleGameOver, generateNextCard]);
+
+  useEffect(() => {
+    if (gameState === GameState.Playing) {
+      if (timerId.current) clearTimeout(timerId.current);
+      const duration = getCardTime();
+      timerId.current = window.setTimeout(() => handleIncorrectSwipe(true), duration);
+    } else {
+      if (timerId.current) clearTimeout(timerId.current);
+    }
+    return () => {
+      if (timerId.current) clearTimeout(timerId.current);
+    };
+  }, [gameState, cardKey, getCardTime, handleIncorrectSwipe]);
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (gameState !== GameState.Playing || swipeProcessed.current) return;
@@ -343,7 +356,7 @@ export default function App() {
           <div className="flex flex-col items-center justify-center h-full w-full">
             <Scoreboard score={score} multiplier={multiplier} />
             <div className={`flex flex-col items-center justify-center ${showGlitch ? 'animate-glitch' : ''}`}>
-                <div className="relative w-full flex flex-col items-center justify-start pt-32 h-96">
+                <div className="relative w-full flex flex-col items-center justify-start pt-8 h-96">
                     <StrikesDisplay strikes={strikes} />
                     <CountdownTimer duration={getCardTime()} key={cardKey} score={score} />
                 </div>
