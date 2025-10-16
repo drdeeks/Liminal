@@ -8,11 +8,8 @@ import { Scoreboard } from './components/ui/Scoreboard';
 import { GameOverScreen } from './components/screens/GameOverScreen';
 import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
 import { GameStartCountdown } from './components/screens/GameStartCountdown';
-import { WalletConnectPopup } from './components/screens/WalletConnectPopup';
 import { CountdownTimer } from './components/game/CountdownTimer';
-import { InfoScreen } from './components/screens/InfoScreen';
 import { StrikesDisplay } from './components/game/StrikesDisplay';
-import { InfoIcon } from './components/ui/icons';
 import { AtmosphereManager } from './systems/AtmosphereManager';
 import { AudioManager, AudioManagerHandle } from './systems/AudioManager';
 import { SparkleController } from './components/ui/SparkleController';
@@ -59,7 +56,6 @@ export default function App() {
   const [totalScore, setTotalScore] = useState(0);
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [cardKey, setCardKey] = useState(0);
-  const [isInfoVisible, setInfoVisible] = useState(false);
   const [atmosphereStage, setAtmosphereStage] = useState<AtmosphereStage>(AtmosphereStage.EARLY);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [isSfxMuted, setIsSfxMuted] = useState(false);
@@ -72,7 +68,6 @@ export default function App() {
   const [gameId, setGameId] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
-  const [showWalletPopup, setShowWalletPopup] = useState(false);
 
 
   const timerId = useRef<number | null>(null);
@@ -148,16 +143,18 @@ export default function App() {
             setSigner(signer);
             setLeaderboardContract(leaderboard);
             setResetStrikesContract(resetStrikes);
-            setShowWalletPopup(false);
+            return true;
         } catch (error: any) {
             if (error.code === 4001) {
                 alert("Wallet connection request was rejected. Please approve the connection in your wallet to continue.");
             } else {
                 console.error("Failed to connect wallet", error);
             }
+            return false;
         }
     } else {
         alert("Please install MetaMask!");
+        return false;
     }
   }, []);
 
@@ -235,7 +232,7 @@ export default function App() {
     if (newStrikes >= 3) {
       handleGameOver();
     } else {
-      generateNextCard();
+      setTimeout(generateNextCard, SWIPE_ANIMATION_DURATION);
     }
   }, [strikes, handleGameOver, generateNextCard]);
 
@@ -257,7 +254,7 @@ export default function App() {
     setMultiplier(newMultiplier);
 
     setScore(prev => prev + (1 * newMultiplier));
-    generateNextCard();
+    setTimeout(generateNextCard, SWIPE_ANIMATION_DURATION);
   }, [correctSwipes, generateNextCard]);
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -293,7 +290,11 @@ export default function App() {
   }, [handleKeyDown]);
 
 
-  const startGame = () => {
+  const startGame = async () => {
+    if (!wallet) {
+        const connected = await connectWallet();
+        if (!connected) return;
+    }
     audioManagerRef.current?.unlockAudio();
     setScore(0);
     setCorrectSwipes(0);
@@ -341,32 +342,42 @@ export default function App() {
   }, [resetStrikesContract, resetStrikesState]);
   
   const renderGameState = () => {
+    const playingUI = (
+      <div className="flex flex-col items-center justify-center h-full w-full">
+        <Scoreboard score={score} multiplier={multiplier} />
+        <div className={`flex flex-col items-center justify-center ${showGlitch ? 'animate-glitch' : ''}`}>
+          <div className="relative w-full flex flex-col items-center justify-start pt-8 h-96">
+            <StrikesDisplay strikes={strikes} />
+            <CountdownTimer duration={getCardTime()} onTimeout={() => handleIncorrectSwipe(true)} score={score} isPaused={isPaused} key={cardKey} />
+          </div>
+          <div className="relative">
+            <DirectionCard
+              direction={currentDirection}
+              keyProp={cardKey}
+              onCorrectSwipe={handleCorrectSwipe}
+              onIncorrectSwipe={handleIncorrectSwipe}
+              isJoker={isJoker}
+              score={score}
+              keyboardSwipeOutDirection={keyboardSwipeOutDirection}
+            />
+          </div>
+        </div>
+      </div>
+    );
+
     switch (gameState) {
       case GameState.Countdown:
-        return <GameStartCountdown onFinish={() => setGameState(GameState.Playing)} />;
-      case GameState.Playing:
         return (
-          <div className="flex flex-col items-center justify-center h-full w-full">
-            <Scoreboard score={score} multiplier={multiplier} />
-            <div className={`flex flex-col items-center justify-center ${showGlitch ? 'animate-glitch' : ''}`}>
-                <div className="relative w-full flex flex-col items-center justify-start pt-8 h-96">
-                    <StrikesDisplay strikes={strikes} />
-                    <CountdownTimer duration={getCardTime()} onTimeout={() => handleIncorrectSwipe(true)} score={score} isPaused={isPaused} key={cardKey} />
-                </div>
-                <div className="relative">
-                  <DirectionCard 
-                    direction={currentDirection} 
-                    keyProp={cardKey}
-                    onCorrectSwipe={handleCorrectSwipe}
-                    onIncorrectSwipe={handleIncorrectSwipe}
-                    isJoker={isJoker}
-                    score={score}
-                    keyboardSwipeOutDirection={keyboardSwipeOutDirection}
-                  />
-                </div>
-            </div>
-          </div>
+          <>
+            {playingUI}
+            <GameStartCountdown onFinish={() => {
+              setGameState(GameState.Playing);
+              setIsPaused(false);
+            }} />
+          </>
         );
+      case GameState.Playing:
+        return playingUI;
       case GameState.GameOver:
         return <GameOverScreen score={score} onPlayAgain={startGame} onSubmitScore={handleSubmitScore} submissionState={submissionState} />;
       case GameState.Leaderboard:
@@ -380,8 +391,7 @@ export default function App() {
             <div className="flex gap-4">
                 <button
                 onClick={startGame}
-                disabled={!wallet}
-                className={`bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop ${!wallet ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/40 transform hover:scale-105'}`}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
                 >
                 Start Game
                 </button>
@@ -401,7 +411,6 @@ export default function App() {
   };
 
   const showLeaderboardButton = gameState === GameState.Start || gameState === GameState.GameOver;
-  const showInfoButton = gameState === GameState.Start;
   const showAudioControls = gameState === GameState.Start;
 
   useEffect(() => {
@@ -414,7 +423,6 @@ export default function App() {
 
   return (
     <main className={`w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black transition-all duration-500 ${feedback === 'correct' ? 'correct-swipe-bg' : ''} ${feedback === 'incorrect' ? 'incorrect-swipe-bg animate-shake' : ''}`}>
-      {showWalletPopup && <WalletConnectPopup onConnect={connectWallet} onClose={() => setShowWalletPopup(false)} />}
       <AtmosphereManager stage={atmosphereStage} />
       <SparkleController trigger={correctSwipes} />
       <AudioManager 
@@ -426,7 +434,6 @@ export default function App() {
         onMilestone={() => triggerGlitch(true)} 
       />
 
-      {isInfoVisible && <InfoScreen onClose={() => setInfoVisible(false)} />}
       
         <div className="absolute top-4 right-4 z-10 flex gap-2">
             {showLeaderboardButton && (
@@ -437,27 +444,10 @@ export default function App() {
                 Leaderboard
                 </button>
             )}
-            {!wallet && (
-                <button
-                onClick={() => setShowWalletPopup(true)}
-                className="bg-black/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black/40 transition-colors text-shadow-pop border-2 border-white/20 backdrop-blur-sm"
-                >
-                Connect Wallet
-                </button>
-            )}
       </div>
 
 
       <div className="absolute top-4 left-4 z-10 flex gap-2">
-        {showInfoButton && (
-            <button
-            onClick={() => setInfoVisible(true)}
-            className="text-white p-2 rounded-full bg-black/20 hover:bg-black/40 transition-colors border-2 border-white/20 backdrop-blur-sm"
-            aria-label="How to play"
-            >
-            <InfoIcon />
-            </button>
-        )}
         {showAudioControls && (
             <>
                 <button onClick={toggleMusicMute} className="text-white p-2 rounded-full bg-black/20 hover:bg-black/40 transition-colors border-2 border-white/20 backdrop-blur-sm">

@@ -19,13 +19,13 @@ export const GameStartCountdown: React.FC<GameStartCountdownProps> = ({ onFinish
 
     const renderContent = () => {
         if (count > 0) {
-            return <div className="text-8xl font-black text-white animate-ping">{count}</div>;
+            return <div className="text-9xl font-black text-white text-shadow-pop animate-ping">{count}</div>;
         }
-        return <div className="text-8xl font-black text-white animate-pulse">START!</div>;
+        return <div className="text-9xl font-black text-white text-shadow-pop animate-pulse">START!</div>;
     };
 
     return (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+        <div className="absolute inset-0 flex items-center justify-center bg-transparent z-50">
             {renderContent()}
         </div>
     );
