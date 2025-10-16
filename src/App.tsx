@@ -67,6 +67,8 @@ export default function App() {
   const [leaderboardContract, setLeaderboardContract] = useState<ethers.Contract | null>(null);
   const [resetStrikesContract, setResetStrikesContract] = useState<ethers.Contract | null>(null);
   const [gameId, setGameId] = useState(0);
+  const [isPaused, setIsPaused] = useState(true);
+  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
 
 
   const timerId = useRef<number | null>(null);
@@ -190,7 +192,7 @@ export default function App() {
   }, [correctSwipes]);
 
   const handleGameOver = useCallback(() => {
-    if (timerId.current) clearTimeout(timerId.current);
+    setIsPaused(true);
     setSubmissionState('idle'); // Allow submission
     setGameState(GameState.GameOver);
   }, []);
@@ -212,8 +214,14 @@ export default function App() {
   const handleIncorrectSwipe = useCallback((isTimeout = false) => {
     if (swipeProcessed.current) return;
     swipeProcessed.current = true;
-    if (timerId.current) clearTimeout(timerId.current);
-    audioManagerRef.current?.playWrongSwipe();
+    setIsPaused(true);
+    setFeedback('incorrect');
+    setTimeout(() => setFeedback(null), 500);
+    if (isTimeout) {
+      audioManagerRef.current?.playTimeout();
+    } else {
+      audioManagerRef.current?.playWrongSwipe();
+    }
 
     const newStrikes = strikes + 1;
     setStrikes(newStrikes);
@@ -228,7 +236,9 @@ export default function App() {
   const handleCorrectSwipe = useCallback(() => {
     if (swipeProcessed.current) return;
     swipeProcessed.current = true;
-    if (timerId.current) clearTimeout(timerId.current);
+    setIsPaused(true);
+    setFeedback('correct');
+    setTimeout(() => setFeedback(null), 500);
     audioManagerRef.current?.playCorrectSwipe();
 
     const newCorrectSwipes = correctSwipes + 1;
@@ -279,6 +289,7 @@ export default function App() {
 
   const startGame = () => {
     audioManagerRef.current?.unlockAudio();
+    setIsPaused(false);
     setScore(0);
     setCorrectSwipes(0);
     setStrikes(0);
@@ -333,7 +344,7 @@ export default function App() {
             <div className={`flex flex-col items-center justify-center ${showGlitch ? 'animate-glitch' : ''}`}>
                 <div className="relative w-full flex flex-col items-center justify-start pt-8 h-96">
                     <StrikesDisplay strikes={strikes} />
-                    <CountdownTimer duration={getCardTime()} key={cardKey} score={score} />
+                    <CountdownTimer duration={getCardTime()} onTimeout={() => handleIncorrectSwipe(true)} score={score} isPaused={isPaused} key={cardKey} />
                 </div>
                 <div className="relative">
                   <DirectionCard 
@@ -362,7 +373,8 @@ export default function App() {
             <div className="flex gap-4">
                 <button
                 onClick={startGame}
-                className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+                disabled={!wallet}
+                className={`bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop ${!wallet ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/40 transform hover:scale-105'}`}
                 >
                 Start Game
                 </button>
@@ -375,6 +387,7 @@ export default function App() {
                     </button>
                 )}
             </div>
+            {!wallet && <p className="mt-4 text-lg text-yellow-400">Please connect your wallet to start.</p>}
           </div>
         );
     }
@@ -393,7 +406,7 @@ export default function App() {
   }, []);
 
   return (
-    <main className="w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black">
+    <main className={`w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black transition-all duration-500 ${feedback === 'correct' ? 'correct-swipe-bg' : ''} ${feedback === 'incorrect' ? 'incorrect-swipe-bg animate-shake' : ''}`}>
       <AtmosphereManager stage={atmosphereStage} />
       <AudioManager 
         ref={audioManagerRef} 
