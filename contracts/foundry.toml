@@ -1,16 +1,10 @@
 [profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
-# Monad Testnet Configuration
-eth-rpc-url="https://testnet-rpc.monad.xyz"
-chain_id = 10143
-metadata = true
-metadata_hash = "none" # disable ipfs
-use_literal_content = true # use source code
+src = 'src'
+out = 'out'
+libs = ['lib']
 
 [rpc_endpoints]
 monad = "https://testnet-rpc.monad.xyz"
 
 [etherscan]
-monad_testnet = { chain = 10143, url = "https://sourcify-api-monad.blockvision.org", key = "dummy" }
+monad = { key = "${ETHERSCAN_API_KEY}", url = "https://sourcify-api-monad.blockvision.org/api", chain = 10143 }

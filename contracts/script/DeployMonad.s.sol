@@ -28,11 +28,6 @@ contract DeployMonad is Script {
 
         vm.stopBroadcast();
 
-        // Automatic verification
-        verifyContract("src/Counter.sol:Counter", address(counter));
-        verifyContract("src/Leaderboard.sol:Leaderboard", address(leaderboard));
-        verifyContract("src/ResetStrikes.sol:ResetStrikes", address(resetStrikes));
-
         string memory addresses = string(abi.encodePacked(
             '{"counter": "',
             vm.toString(address(counter)),
@@ -45,21 +40,5 @@ contract DeployMonad is Script {
 
         string memory path = "./monad-deployed-addresses.json";
         vm.writeFile(path, addresses);
-    }
-
-    function verifyContract(string memory contractInfo, address addr) internal {
-        string[] memory args = new string[](10);
-        args[0] = "forge";
-        args[1] = "verify-contract";
-        args[2] = vm.toString(addr);
-        args[3] = contractInfo;
-        args[4] = "--chain-id";
-        args[5] = "10143";
-        args[6] = "--verifier";
-        args[7] = "sourcify";
-        args[8] = "--verifier-url";
-        args[9] = "https://sourcify-api-monad.blockvision.org";
-
-        vm.ffi(args);
     }
 }
