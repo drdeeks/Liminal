@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { sdk } from '@farcaster/miniapp-sdk';
 // FIX: Updated import paths to match the 'src' directory structure.
 import { Direction, GameState, AtmosphereStage, getOppositeDirection } from './types';
 import { DirectionCard } from './components/game/DirectionCard';
@@ -385,6 +386,10 @@ export default function App() {
 
   useEffect(() => {
     // Do not automatically connect wallet on component mount
+  }, []);
+
+  useEffect(() => {
+    sdk.actions.ready();
   }, []);
 
   return (
