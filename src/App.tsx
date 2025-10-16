@@ -7,6 +7,8 @@ import { DirectionCard } from './components/game/DirectionCard';
 import { Scoreboard } from './components/ui/Scoreboard';
 import { GameOverScreen } from './components/screens/GameOverScreen';
 import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
+import { GameStartCountdown } from './components/screens/GameStartCountdown';
+import { WalletConnectPopup } from './components/screens/WalletConnectPopup';
 import { CountdownTimer } from './components/game/CountdownTimer';
 import { InfoScreen } from './components/screens/InfoScreen';
 import { StrikesDisplay } from './components/game/StrikesDisplay';
@@ -70,6 +72,7 @@ export default function App() {
   const [gameId, setGameId] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [showWalletPopup, setShowWalletPopup] = useState(false);
 
 
   const timerId = useRef<number | null>(null);
@@ -145,6 +148,7 @@ export default function App() {
             setSigner(signer);
             setLeaderboardContract(leaderboard);
             setResetStrikesContract(resetStrikes);
+            setShowWalletPopup(false);
         } catch (error: any) {
             if (error.code === 4001) {
                 alert("Wallet connection request was rejected. Please approve the connection in your wallet to continue.");
@@ -205,6 +209,7 @@ export default function App() {
       setCurrentDirection(getRandomDirection());
       setIsJoker(Math.random() < JOKER_CHANCE);
       setCardKey(prev => prev + 1);
+      setIsPaused(false);
   }, [triggerGlitch]);
 
   useEffect(() => {
@@ -290,7 +295,6 @@ export default function App() {
 
   const startGame = () => {
     audioManagerRef.current?.unlockAudio();
-    setIsPaused(false);
     setScore(0);
     setCorrectSwipes(0);
     setStrikes(0);
@@ -300,7 +304,7 @@ export default function App() {
     setSubmissionState('idle');
     setCardKey(prev => prev + 1);
     swipeProcessed.current = false;
-    setGameState(GameState.Playing);
+    setGameState(GameState.Countdown);
     setGameId(prevGameId => prevGameId + 1); // Use a simple counter for unique game IDs
   };
   
@@ -338,6 +342,8 @@ export default function App() {
   
   const renderGameState = () => {
     switch (gameState) {
+      case GameState.Countdown:
+        return <GameStartCountdown onFinish={() => setGameState(GameState.Playing)} />;
       case GameState.Playing:
         return (
           <div className="flex flex-col items-center justify-center h-full w-full">
@@ -408,6 +414,7 @@ export default function App() {
 
   return (
     <main className={`w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black transition-all duration-500 ${feedback === 'correct' ? 'correct-swipe-bg' : ''} ${feedback === 'incorrect' ? 'incorrect-swipe-bg animate-shake' : ''}`}>
+      {showWalletPopup && <WalletConnectPopup onConnect={connectWallet} onClose={() => setShowWalletPopup(false)} />}
       <AtmosphereManager stage={atmosphereStage} />
       <SparkleController trigger={correctSwipes} />
       <AudioManager 
@@ -432,7 +439,7 @@ export default function App() {
             )}
             {!wallet && (
                 <button
-                onClick={connectWallet}
+                onClick={() => setShowWalletPopup(true)}
                 className="bg-black/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black/40 transition-colors text-shadow-pop border-2 border-white/20 backdrop-blur-sm"
                 >
                 Connect Wallet

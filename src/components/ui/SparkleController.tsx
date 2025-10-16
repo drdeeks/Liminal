@@ -10,7 +10,7 @@ interface SparkleData {
     style: React.CSSProperties;
 }
 
-const SPARKLE_COUNT = 10;
+const SPARKLE_COUNT = 20;
 
 export const SparkleController: React.FC<SparkleControllerProps> = ({ trigger }) => {
     const [sparkles, setSparkles] = useState<SparkleData[]>([]);
@@ -19,12 +19,14 @@ export const SparkleController: React.FC<SparkleControllerProps> = ({ trigger })
         if (trigger) {
             const newSparkles: SparkleData[] = [];
             for (let i = 0; i < SPARKLE_COUNT; i++) {
+                const angle = Math.random() * 2 * Math.PI;
+                const radius = Math.random() * 150 + 50;
                 newSparkles.push({
                     id: Date.now() + i,
                     style: {
-                        top: `${Math.random() * 100}%`,
-                        left: `${Math.random() * 100}%`,
-                        transform: `scale(${Math.random()})`,
+                        top: `calc(50% + ${Math.sin(angle) * radius}px)`,
+                        left: `calc(50% + ${Math.cos(angle) * radius}px)`,
+                        transform: `scale(${Math.random() * 0.5 + 0.5})`,
                         animationDuration: `${Math.random() * 0.5 + 0.5}s`,
                     },
                 });

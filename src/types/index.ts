@@ -7,6 +7,7 @@ export enum Direction {
 
 export enum GameState {
   Start,
+  Countdown,
   Playing,
   GameOver,
   Leaderboard,
