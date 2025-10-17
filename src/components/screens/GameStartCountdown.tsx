@@ -12,9 +12,7 @@ export const GameStartCountdown: React.FC<GameStartCountdownProps> = ({ onFinish
             const timer = setTimeout(() => setCount(count - 1), 1000);
             return () => clearTimeout(timer);
         } else if (count === 0) {
-            const timer = setTimeout(() => {
-                onFinish();
-            }, 1000);
+            const timer = setTimeout(() => onFinish(), 1000);
             return () => clearTimeout(timer);
         }
     }, [count, onFinish]);

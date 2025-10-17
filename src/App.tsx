@@ -1,11 +1,12 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { sdk } from '@farcaster/miniapp-sdk';
+import { sdk } from '@farcaster/miniapp-sdk';// FIX: Updated import paths to match the 'src' directory structure.
 import { Direction, GameState, AtmosphereStage, getOppositeDirection } from './types';
 import { DirectionCard } from './components/game/DirectionCard';
 import { Scoreboard } from './components/ui/Scoreboard';
 import { GameOverScreen } from './components/screens/GameOverScreen';
 import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
+import { GameStartCountdown } from './components/screens/GameStartCountdown';
 import { CountdownTimer } from './components/game/CountdownTimer';
 import { StrikesDisplay } from './components/game/StrikesDisplay';
 import { AtmosphereManager } from './systems/AtmosphereManager';
@@ -292,8 +293,8 @@ export default function App() {
 
   const startGame = async () => {
     if (!wallet) {
-      const connected = await connectWallet();
-      if (!connected) return;
+        const connected = await connectWallet();
+        if (!connected) return;
     }
     audioManagerRef.current?.unlockAudio();
     setScore(0);
@@ -368,13 +369,13 @@ export default function App() {
     switch (gameState) {
       case GameState.Countdown:
         return (
-            <>
-                {playingUI}
-                <GameStartCountdown onFinish={() => {
-                    setGameState(GameState.Playing);
-                    setIsPaused(false);
-                }} />
-            </>
+          <>
+            {playingUI}
+            <GameStartCountdown onFinish={() => {
+              setGameState(GameState.Playing);
+              setIsPaused(false);
+            }} />
+          </>
         );
       case GameState.Playing:
         return playingUI;
@@ -404,6 +405,7 @@ export default function App() {
                     </button>
                 )}
             </div>
+            {!wallet && <p className="mt-4 text-lg text-yellow-400">Please connect your wallet to start.</p>}
           </div>
         );
     }
@@ -414,6 +416,10 @@ export default function App() {
 
   useEffect(() => {
     // Do not automatically connect wallet on component mount
+  }, []);
+
+  useEffect(() => {
+    sdk.actions.ready();
   }, []);
 
   return (
@@ -459,4 +465,3 @@ export default function App() {
     </main>
   );
 }
->>>>>>> REPLACE
