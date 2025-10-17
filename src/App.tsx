@@ -1,7 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { sdk } from '@farcaster/miniapp-sdk';
-// FIX: Updated import paths to match the 'src' directory structure.
+import { sdk } from '@farcaster/miniapp-sdk';// FIX: Updated import paths to match the 'src' directory structure.
 import { Direction, GameState, AtmosphereStage, getOppositeDirection } from './types';
 import { DirectionCard } from './components/game/DirectionCard';
 import { Scoreboard } from './components/ui/Scoreboard';
@@ -15,6 +14,7 @@ import { AudioManager, AudioManagerHandle } from './systems/AudioManager';
 import { SparkleController } from './components/ui/SparkleController';
 import { ethers } from 'ethers';
 import { LEADERBOARD_CONTRACT_ADDRESS, RESET_STRIKES_CONTRACT_ADDRESS, LEADERBOARD_ABI, RESET_STRIKES_ABI } from './contract-config';
+import { GameStartCountdown } from './components/screens/GameStartCountdown';
 
 const TOTAL_SCORE_KEY = 'liminalTotalScore';
 const JOKER_CHANCE = 0.15; // 15% chance for a joker card
@@ -76,6 +76,7 @@ export default function App() {
   const swipeProcessed = useRef(false);
 
   useEffect(() => {
+    sdk.actions.ready();
     const storedTotalScore = localStorage.getItem(TOTAL_SCORE_KEY);
     if (storedTotalScore) {
         try {
@@ -393,7 +394,7 @@ export default function App() {
                 onClick={startGame}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
                 >
-                Start Game
+                {wallet ? 'Start Game' : 'Connect Wallet'}
                 </button>
                 {wallet && strikes > 0 && (
                     <button
