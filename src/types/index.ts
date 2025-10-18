@@ -1,4 +1,3 @@
-// FIX: Removed self-import of `Direction`.
 export enum Direction {
   Up,
   Down,
@@ -8,6 +7,7 @@ export enum Direction {
 
 export enum GameState {
   Start,
+  Countdown,
   Playing,
   GameOver,
   Leaderboard,
