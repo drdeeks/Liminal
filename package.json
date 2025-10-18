@@ -16,7 +16,8 @@
     "ethers": "^6.15.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "solc": "^0.8.30"
+    "solc": "^0.8.30",
+    "vite-plugin-node-polyfills": "^0.24.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

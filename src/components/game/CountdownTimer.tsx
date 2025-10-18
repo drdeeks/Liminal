@@ -37,7 +37,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onTime
                 onTimeout();
                 timeoutCalled.current = true;
             } else if (remaining > 0) {
-                timerRef.current = window.setTimeout(tick, 16); // ~60fps
+                timerRef.current = window.setTimeout(tick, 16);
             }
         };
 
@@ -47,6 +47,12 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onTime
             if (timerRef.current) clearTimeout(timerRef.current);
         };
     }, [duration, onTimeout, isPaused]);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, []);
 
     const colorClass = getTimerColor(score);
 

@@ -14,7 +14,6 @@ import { AudioManager, AudioManagerHandle } from './systems/AudioManager';
 import { SparkleController } from './components/ui/SparkleController';
 import { ethers } from 'ethers';
 import { LEADERBOARD_CONTRACT_ADDRESS, RESET_STRIKES_CONTRACT_ADDRESS, LEADERBOARD_ABI, RESET_STRIKES_ABI } from './contract-config';
-import { GameStartCountdown } from './components/screens/GameStartCountdown';
 
 const TOTAL_SCORE_KEY = 'liminalTotalScore';
 const JOKER_CHANCE = 0.15; // 15% chance for a joker card
@@ -291,10 +290,10 @@ export default function App() {
   }, [handleKeyDown]);
 
 
-  const startGame = async () => {
+  const startGame = () => {
     if (!wallet) {
-        const connected = await connectWallet();
-        if (!connected) return;
+      alert("Please connect your wallet first.");
+      return;
     }
     audioManagerRef.current?.unlockAudio();
     setScore(0);
@@ -307,7 +306,11 @@ export default function App() {
     setCardKey(prev => prev + 1);
     swipeProcessed.current = false;
     setGameState(GameState.Countdown);
-    setGameId(prevGameId => prevGameId + 1); // Use a simple counter for unique game IDs
+    setGameId(Date.now());
+  };
+
+  const returnToStartScreen = () => {
+    setGameState(GameState.Start);
   };
   
   const toggleMusicMute = () => {
@@ -371,16 +374,16 @@ export default function App() {
         return (
           <>
             {playingUI}
-            <GameStartCountdown onFinish={() => {
-              setGameState(GameState.Playing);
-              setIsPaused(false);
-            }} />
+            <GameStartCountdown
+              onStartGame={() => setIsPaused(false)}
+              onCountdownFinished={() => setGameState(GameState.Playing)}
+            />
           </>
         );
       case GameState.Playing:
         return playingUI;
       case GameState.GameOver:
-        return <GameOverScreen score={score} onPlayAgain={startGame} onSubmitScore={handleSubmitScore} submissionState={submissionState} />;
+        return <GameOverScreen score={score} onPlayAgain={returnToStartScreen} onSubmitScore={handleSubmitScore} submissionState={submissionState} />;
       case GameState.Leaderboard:
         return <LeaderboardScreen onBack={() => setGameState(GameState.Start)} />;
       case GameState.Start:
@@ -391,7 +394,7 @@ export default function App() {
             <p className="text-2xl mb-12 max-w-md text-shadow-pop">The deeper you go, the more it changes. Three strikes. Good luck.</p>
             <div className="flex gap-4">
                 <button
-                onClick={startGame}
+                onClick={wallet ? startGame : connectWallet}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
                 >
                 {wallet ? 'Start Game' : 'Connect Wallet'}

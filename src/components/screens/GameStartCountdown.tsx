@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
 interface GameStartCountdownProps {
-    onFinish: () => void;
+    onStartGame: () => void;
+    onCountdownFinished: () => void;
 }
 
-export const GameStartCountdown: React.FC<GameStartCountdownProps> = ({ onFinish }) => {
+export const GameStartCountdown: React.FC<GameStartCountdownProps> = ({ onStartGame, onCountdownFinished }) => {
     const [count, setCount] = useState(3);
 
     useEffect(() => {
@@ -12,10 +13,11 @@ export const GameStartCountdown: React.FC<GameStartCountdownProps> = ({ onFinish
             const timer = setTimeout(() => setCount(count - 1), 1000);
             return () => clearTimeout(timer);
         } else if (count === 0) {
-            const timer = setTimeout(() => onFinish(), 1000);
+            onStartGame();
+            const timer = setTimeout(onCountdownFinished, 1000);
             return () => clearTimeout(timer);
         }
-    }, [count, onFinish]);
+    }, [count, onStartGame, onCountdownFinished]);
 
     const renderContent = () => {
         if (count > 0) {
