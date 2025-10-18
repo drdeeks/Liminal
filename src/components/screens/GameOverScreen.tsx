@@ -20,7 +20,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, onPlayAga
     }
   };
   
-  const isSubmitDisabled = submissionState === 'pending' || submissionState === 'success';
+  const isSubmitDisabled = submissionState === 'pending' || submissionState === 'success' || submissionState === 'error';
 
   return (
     <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in-scale">
