@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface CountdownTimerProps {
     duration: number;
-    onTimeout: () => void;
+    key: number;
     score: number;
-    isPaused: boolean;
 }
 
 const getTimerColor = (score: number) => {
@@ -14,45 +13,33 @@ const getTimerColor = (score: number) => {
     return 'text-white/60';
 };
 
-export const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onTimeout, score, isPaused }) => {
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, key, score }) => {
     const [timeLeft, setTimeLeft] = useState(duration);
-    const timerRef = useRef<number | null>(null);
-    const timeoutCalled = useRef(false);
+    const frameId = useRef<number | null>(null);
+    const startTime = useRef<number | null>(null);
 
     useEffect(() => {
-        if (isPaused) {
-            if (timerRef.current) clearTimeout(timerRef.current);
-            return;
-        }
+        startTime.current = performance.now();
 
-        timeoutCalled.current = false;
-        const startTime = Date.now();
+        const animate = (now: number) => {
+            if (!startTime.current) return;
+            const elapsed = now - startTime.current;
+            const newTimeLeft = Math.max(0, duration - elapsed);
+            setTimeLeft(newTimeLeft);
 
-        const tick = () => {
-            const elapsed = Date.now() - startTime;
-            const remaining = Math.max(0, duration - elapsed);
-            setTimeLeft(remaining);
-
-            if (remaining === 0 && !timeoutCalled.current) {
-                onTimeout();
-                timeoutCalled.current = true;
-            } else if (remaining > 0) {
-                timerRef.current = window.setTimeout(tick, 16);
+            if (newTimeLeft > 0) {
+                frameId.current = requestAnimationFrame(animate);
             }
         };
 
-        timerRef.current = window.setTimeout(tick, 0);
+        frameId.current = requestAnimationFrame(animate);
 
         return () => {
-            if (timerRef.current) clearTimeout(timerRef.current);
+            if (frameId.current) {
+                cancelAnimationFrame(frameId.current);
+            }
         };
-    }, [duration, onTimeout, isPaused]);
-
-    useEffect(() => {
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current);
-        };
-    }, []);
+    }, [duration, key]);
 
     const colorClass = getTimerColor(score);
 
