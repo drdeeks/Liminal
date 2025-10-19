@@ -12,6 +12,7 @@ interface AudioManagerProps {
 export interface AudioManagerHandle {
     playCorrectSwipe: () => void;
     playWrongSwipe: () => void;
+    playTimeout: () => void;
     unlockAudio: () => void;
 }
 
@@ -21,6 +22,7 @@ export const AudioManager = forwardRef<AudioManagerHandle, AudioManagerProps>(
     ({ stage, multiplier, isMusicMuted, isSfxMuted, onMilestone }, ref) => {
         const correctSwipeAudio = useRef<HTMLAudioElement>(null);
         const wrongSwipeAudio = useRef<HTMLAudioElement>(null);
+        const timeoutAudio = useRef<HTMLAudioElement>(null);
         const milestoneAudio = useRef<HTMLAudioElement>(null);
 
         const ambientLayers = {
@@ -50,6 +52,7 @@ export const AudioManager = forwardRef<AudioManagerHandle, AudioManagerProps>(
                 const allAudio = [
                     correctSwipeAudio.current,
                     wrongSwipeAudio.current,
+                    timeoutAudio.current,
                     milestoneAudio.current,
                     tensionAudio.current,
                     ...Object.values(ambientLayers).map(r => r.current)
@@ -82,6 +85,12 @@ export const AudioManager = forwardRef<AudioManagerHandle, AudioManagerProps>(
                 if (wrongSwipeAudio.current && !isSfxMuted && isAudioUnlocked && !audioLoadErrors.has(wrongSwipeAudio.current.src)) {
                     wrongSwipeAudio.current.currentTime = 0;
                     wrongSwipeAudio.current.play().catch(e => {});
+                }
+            },
+            playTimeout: () => {
+                if (timeoutAudio.current && !isSfxMuted && isAudioUnlocked && !audioLoadErrors.has(timeoutAudio.current.src)) {
+                    timeoutAudio.current.currentTime = 0;
+                    timeoutAudio.current.play().catch(e => {});
                 }
             },
         }));
@@ -146,6 +155,7 @@ export const AudioManager = forwardRef<AudioManagerHandle, AudioManagerProps>(
             <>
                 <audio ref={correctSwipeAudio} src="/audio/correct.mp3" preload="auto" onError={handleAudioError} />
                 <audio ref={wrongSwipeAudio} src="/audio/wrong.mp3" preload="auto" onError={handleAudioError} />
+                <audio ref={timeoutAudio} src="/audio/timeout.mp3" preload="auto" onError={handleAudioError} />
                 <audio ref={milestoneAudio} src="/audio/milestone.mp3" preload="auto" onError={handleAudioError} />
                 <audio ref={ambientLayers[AtmosphereStage.EARLY]} src="/audio/ambient_1_early.mp3" loop preload="auto" onError={handleAudioError} />
                 <audio ref={ambientLayers[AtmosphereStage.THRESHOLD_1]} src="/audio/ambient_2_mid.mp3" loop preload="auto" onError={handleAudioError} />
