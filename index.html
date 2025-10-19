@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://liminal.game/og-image.png","button":{"title":"Start Playing","action":{"type":"launch_miniapp","url":"https://liminal.game","name":"Liminal","splashImageUrl":"https://liminal.game/splash.png","splashBackgroundColor":"#000000"}}}' />
+    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://liminal.game/og-image.png","button":{"title":"Start Playing","action":{"type":"launch_frame","url":"https://liminal.game","name":"Liminal","splashImageUrl":"https://liminal.game/splash.png","splashBackgroundColor":"#000000"}}}' />
     <title>Liminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -76,6 +78,49 @@
       }
       .animate-correct-flash {
         animation: correct-border-flash 0.2s ease-out forwards;
+      }
+      @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+      }
+      .animate-shake {
+        animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+      }
+      .correct-swipe-bg {
+        --tw-bg-opacity: 1;
+        background-color: rgba(22, 163, 74, 0.2);
+      }
+      .incorrect-swipe-bg {
+        --tw-bg-opacity: 1;
+        background-color: rgba(220, 38, 38, 0.2);
+      }
+      @keyframes breakthrough {
+        0% { opacity: 0; transform: scale(0.5); }
+        50% { opacity: 1; transform: scale(1.2); }
+        100% { opacity: 0; transform: scale(1.5); }
+      }
+      .animate-breakthrough {
+        animation: breakthrough 1s ease-out forwards;
+      }
+      @keyframes sparkle-animation {
+        0% { transform: scale(0); opacity: 1; }
+        100% { transform: scale(1); opacity: 0; }
+      }
+      .sparkle {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        animation: sparkle-animation 0.8s ease-out forwards;
+        z-index: 100;
+      }
+      @keyframes sparkle-animation {
+        0% { transform: scale(0); opacity: 1; }
+        50% { opacity: 1; }
+        100% { transform: scale(1.5); opacity: 0; }
       }
     </style>
 <script type="importmap">

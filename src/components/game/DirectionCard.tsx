@@ -67,9 +67,9 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
         }
     };
 
-    const handleDragMove = useCallback((e: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+    const handleDragMove = useCallback((e: TouchEvent | MouseEvent) => {
         if (!isDragging || swipeOutDirection !== null) return;
-        const { x, y } = getCoords(e);
+        const { x, y } = getCoords(e as unknown as React.TouchEvent<HTMLDivElement>);
         const deltaX = x - startPos.current.x;
         const deltaY = y - startPos.current.y;
         setPosition({ x: deltaX, y: deltaY });
@@ -80,7 +80,6 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
         setIsDragging(false);
 
         if (cardRef.current) {
-            // Restore default transition for snap-back or other animations
             cardRef.current.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-in, box-shadow 1s ease-in-out, border-color 0.2s ease-out';
         }
         
@@ -112,7 +111,6 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
             const targetDirection = isJoker ? getOppositeDirection(direction) : direction;
 
             if (swipedDirection === targetDirection) {
-                // Correct Swipe: Trigger haptics, flash, and swipe-out animation, then notify parent.
                 if (navigator.vibrate) {
                     const hapticDuration = Math.round(Math.max(40, Math.min(100, 40 + (velocity - VELOCITY_THRESHOLD) * 50)));
                     navigator.vibrate(hapticDuration);
@@ -121,15 +119,14 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
                 setSwipeOutDirection(swipedDirection);
                 setTimeout(onCorrectSwipe, SWIPE_ANIMATION_DURATION);
             } else {
-                // Incorrect Swipe: Trigger haptics and snap back, then notify parent.
                 if (navigator.vibrate) {
-                    navigator.vibrate([50, 30, 50]);
+                    navigator.vibrate([70, 50, 70]);
                 }
                 setTimeout(onIncorrectSwipe, 150);
                 setPosition({ x: 0, y: 0 }); 
             }
         } else {
-             setPosition({ x: 0, y: 0 }); // Snap back if not a valid swipe
+             setPosition({ x: 0, y: 0 });
         }
     }, [isDragging, position, direction, isJoker, onCorrectSwipe, onIncorrectSwipe, swipeOutDirection]);
     
@@ -213,7 +210,7 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
             onTouchMove={handleDragMove as (e: React.TouchEvent<HTMLDivElement>) => void}
-            onTouchEnd={handleDragEnd}
+            onTouchEnd={handleDragEnd as (e: React.TouchEvent<HTMLDivElement>) => void}
         >
             <div className="drop-shadow-lg">
               {directionMap[direction]}
