@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/Leaderboard.sol";
+import {Test} from "forge-std/Test.sol";
+import {Leaderboard} from "../src/Leaderboard.sol";
 
 contract LeaderboardTest is Test {
     Leaderboard leaderboard;
@@ -29,6 +29,8 @@ contract LeaderboardTest is Test {
 
     function testGetLeaderboard_Pagination() public {
         for (uint256 i = 0; i < 25; i++) {
+            // The test case will not exceed the bounds of uint160, so this cast is safe.
+            // forge-lint: disable-next-line(unsafe-typecast)
             vm.prank(address(uint160(i + 1)));
             leaderboard.submitScore(i + 1, i + 1);
         }
