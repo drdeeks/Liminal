@@ -1,42 +1,42 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
-import "forge-std/console.sol";
-import "forge-std/StdCheats.sol";
-import "../src/Counter.sol";
-import "../src/Leaderboard.sol";
-import "../src/ResetStrikes.sol";
+import {Script} from "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
+import {Leaderboard} from "../src/Leaderboard.sol";
+import {ResetStrikes} from "../src/ResetStrikes.sol";
 
 contract DeployMonad is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address owner = vm.envAddress("OWNER");
+
         if (deployerPrivateKey == 0) {
-            revert("No private key found. Set the PRIVATE_KEY environment variable.");
+            revert("PRIVATE_KEY not set");
+        }
+        if (owner == address(0)) {
+            revert("OWNER address not set");
         }
 
         vm.startBroadcast(deployerPrivateKey);
 
-        Counter counter = new Counter();
-        console.log("Counter deployed to:", address(counter));
-
-        Leaderboard leaderboard = new Leaderboard();
+        Leaderboard leaderboard = new Leaderboard(owner);
         console.log("Leaderboard deployed to:", address(leaderboard));
 
-        ResetStrikes resetStrikes = new ResetStrikes(0.0001 ether);
+        ResetStrikes resetStrikes = new ResetStrikes(owner, 0.0001 ether);
         console.log("ResetStrikes deployed to:", address(resetStrikes));
 
         vm.stopBroadcast();
 
-        string memory addresses = string(abi.encodePacked(
-            '{"counter": "',
-            vm.toString(address(counter)),
-            '", "leaderboard": "',
-            vm.toString(address(leaderboard)),
-            '", "resetStrikes": "',
-            vm.toString(address(resetStrikes)),
-            '"}'
-        ));
+        string memory addresses = string(
+            abi.encodePacked(
+                '{"leaderboard":"',
+                vm.toString(address(leaderboard)),
+                '","resetStrikes":"',
+                vm.toString(address(resetStrikes)),
+                '"}'
+            )
+        );
 
         string memory path = "./monad-deployed-addresses.json";
         vm.writeFile(path, addresses);

@@ -56,11 +56,13 @@ Create a `.env` file in the root of the project and add the following variables.
 ```
 RPC_URL="https://testnet-rpc.monad.xyz"
 PRIVATE_KEY="YOUR_WALLET_PRIVATE_KEY"
+OWNER_ADDRESS="THE_ADDRESS_THAT_WILL_OWN_THE_CONTRACTS"
 ETHERSCAN_API_KEY="YOUR_ETHERSCAN_API_KEY"
 ```
 
 - `RPC_URL`: The RPC endpoint for the Monad Testnet.
 - `PRIVATE_KEY`: The private key of the wallet you'll use for deployment. **(See "Deployment with Keystore" for a more secure option)**.
+- `OWNER_ADDRESS`: The address that will own the deployed contracts.
 - `ETHERSCAN_API_KEY`: A placeholder for your block explorer API key. While the variable is named `ETHERSCAN_API_KEY`, Foundry uses it for various explorers.
 
 ### 4. Run the Application
@@ -101,7 +103,7 @@ This method uses the `PRIVATE_KEY` you set in your `.env` file.
 **Steps:**
 
 1.  **Ensure Environment Variables are Set:**
-    Make sure your `.env` file is correctly configured with your `RPC_URL`, `PRIVATE_KEY`, and `ETHERSCAN_API_KEY`.
+    Make sure your `.env` file is correctly configured with your `RPC_URL`, `PRIVATE_KEY`, `OWNER_ADDRESS`, and `ETHERSCAN_API_KEY`.
 
 2.  **Run the Deployment Script:**
     From the root of the project, run:
@@ -134,8 +136,9 @@ This method is more secure as it avoids exposing your private key directly in an
       KEYSTORE_PATH="/path/to/your/foundry/keystores/your-keystore-file.json"
       SENDER_ADDRESS="YOUR_WALLET_ADDRESS"
       KEYSTORE_PASSWORD="YOUR_KEYSTORE_PASSWORD"
+      OWNER_ADDRESS="THE_ADDRESS_THAT_WILL_OWN_THE_CONTRACTS"
       ```
-    - Replace the placeholder values with your actual keystore path, wallet address, and password.
+    - Replace the placeholder values with your actual keystore path, wallet address, password, and owner address.
 
 4.  **Run the Keystore Deployment Script:**
     From the root of the project, run:
@@ -148,6 +151,10 @@ This command uses your keystore file and password to sign and send the deploymen
 ### Post-Deployment
 
 After a successful deployment, the script will create a `monad-deployed-addresses.json` file in the `contracts` directory. This file contains the addresses of the newly deployed contracts. The `scripts/update-config.js` script will automatically update the frontend configuration with these new addresses.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue.
 
 ## License
 

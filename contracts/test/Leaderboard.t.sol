@@ -8,7 +8,7 @@ contract LeaderboardTest is Test {
     Leaderboard leaderboard;
 
     function setUp() public {
-        leaderboard = new Leaderboard();
+        leaderboard = new Leaderboard(address(this));
     }
 
     function testSubmitScore() public {
@@ -23,20 +23,20 @@ contract LeaderboardTest is Test {
         vm.prank(address(1));
         leaderboard.submitScore(100, 1);
         vm.prank(address(1));
-        vm.expectRevert(bytes("Score already submitted for this game"));
+        vm.expectRevert(Leaderboard.GameAlreadySubmitted.selector);
         leaderboard.submitScore(100, 1);
     }
 
     function testGetLeaderboard_Pagination() public {
         for (uint256 i = 0; i < 25; i++) {
             vm.prank(address(uint160(i + 1)));
-            leaderboard.submitScore(i + 1, 1);
+            leaderboard.submitScore(i + 1, i + 1);
         }
 
         (address[] memory addrs, uint256[] memory scores) = leaderboard.getLeaderboard(1, 10);
         assertEq(addrs.length, 10);
         assertEq(scores.length, 10);
-        assertEq(addrs[0], address(11));
-        assertEq(scores[0], 11);
+        assertEq(addrs[0], address(15));
+        assertEq(scores[0], 15);
     }
 }

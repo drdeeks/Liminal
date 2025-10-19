@@ -11,13 +11,13 @@ const addresses = JSON.parse(fs.readFileSync(addressesPath, 'utf8'));
 let configContent = fs.readFileSync(configPath, 'utf8');
 
 configContent = configContent.replace(
-    /export const LEADERBOARD_CONTRACT_ADDRESS = ".*";/,
-    `export const LEADERBOARD_CONTRACT_ADDRESS = "${addresses.leaderboard}";`
+    /(export const LEADERBOARD_CONTRACT_ADDRESS = )".*";/,
+    `$1"${addresses.leaderboard}";`
 );
 
 configContent = configContent.replace(
-    /export const RESET_STRIKES_CONTRACT_ADDRESS = ".*";/,
-    `export const RESET_STRIKES_CONTRACT_ADDRESS = "${addresses.resetStrikes}";`
+    /(export const RESET_STRIKES_CONTRACT_ADDRESS = )".*";/,
+    `$1"${addresses.resetStrikes}";`
 );
 
 fs.writeFileSync(configPath, configContent);

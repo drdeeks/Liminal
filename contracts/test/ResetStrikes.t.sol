@@ -8,7 +8,7 @@ contract ResetStrikesTest is Test {
     ResetStrikes resetStrikes;
 
     function setUp() public {
-        resetStrikes = new ResetStrikes(0.0001 ether);
+        resetStrikes = new ResetStrikes(address(this), 0.0001 ether);
     }
 
     function testResetStrikes() public {
