@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Direction, getOppositeDirection } from '../../types';
+import { Direction, getOppositeDirection } from '../../lib/types';
 import { ArrowUpIcon, ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/icons';
 
 interface DirectionCardProps {
@@ -28,6 +28,7 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [isIncorrect, setIsIncorrect] = useState(false);
     const [swipeOutDirection, setSwipeOutDirection] = useState<Direction | null>(null);
     const startPos = useRef({ x: 0, y: 0 });
     const startTime = useRef<number>(0);
@@ -38,6 +39,7 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
         setPosition({ x: 0, y: 0 });
         setIsDragging(false);
         setIsConfirmed(false);
+        setIsIncorrect(false);
         setSwipeOutDirection(null);
     }, [keyProp]);
 
@@ -125,6 +127,7 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
                 if (navigator.vibrate) {
                     navigator.vibrate([50, 30, 50]);
                 }
+                setIsIncorrect(true);
                 setTimeout(onIncorrectSwipe, 150);
                 setPosition({ x: 0, y: 0 }); 
             }
@@ -192,7 +195,7 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
     };
 
     const cardColor = isJoker ? 'bg-rose-500' : 'bg-teal-600';
-    const feedbackClass = isConfirmed ? 'animate-correct-flash' : '';
+    const feedbackClass = isConfirmed ? 'animate-correct-flash' : isIncorrect ? 'animate-incorrect-flash' : '';
     
     const transitionStyle = isDragging ? 'none' : 
         swipeOutDirection !== null ? `transform ${SWIPE_ANIMATION_DURATION}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity ${SWIPE_ANIMATION_DURATION * 0.8}ms ease-out` :

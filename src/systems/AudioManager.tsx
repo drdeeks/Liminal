@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
-import { AtmosphereStage } from '../types';
+import { AtmosphereStage } from '../lib/types';
 
 interface AudioManagerProps {
     stage: AtmosphereStage;

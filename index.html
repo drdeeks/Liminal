@@ -77,6 +77,13 @@
       .animate-correct-flash {
         animation: correct-border-flash 0.2s ease-out forwards;
       }
+      @keyframes incorrect-border-flash {
+        0% { border-color: rgba(239, 68, 68, 0.9); } /* red-500 */
+        100% { border-color: rgba(255, 255, 255, 0.2); }
+      }
+      .animate-incorrect-flash {
+        animation: incorrect-border-flash 0.2s ease-out forwards;
+      }
     </style>
 <script type="importmap">
 {
