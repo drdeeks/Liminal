@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force --debug",
+    "dev:debug": "DEBUG=vite:* vite --force --clearScreen false",
+    "dev:polling": "vite --force --clearScreen false",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "cd contracts && forge script script/DeployMonad.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY && cd .. && node scripts/update-config.js",
