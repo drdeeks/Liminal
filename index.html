@@ -1,3 +1,145 @@
+<<<<<<< HEAD
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://liminal.game/og-image.png","button":{"title":"Start Playing","action":{"type":"launch_miniapp","url":"https://liminal.game","name":"Liminal","splashImageUrl":"https://liminal.game/splash.png","splashBackgroundColor":"#000000"}}}' />
+    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://liminal.game/og-image.png","button":{"title":"Start Playing","action":{"type":"launch_frame","url":"https://liminal.game","name":"Liminal","splashImageUrl":"https://liminal.game/splash.png","splashBackgroundColor":"#000000"}}}' />
+    <title>Liminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        touch-action: none; /* Prevents scrolling on mobile */
+      }
+      .text-shadow-pop {
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+      }
+      
+      @keyframes glitter-animation {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+      }
+
+      .text-glitter {
+        position: relative;
+        background: linear-gradient(to bottom right, #22d3ee, #a855f7); /* Tailwind cyan-400 to purple-500 */
+        -webkit-background-clip: text;
+        -moz-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .text-glitter::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: radial-gradient(circle, white 0.5px, transparent 1px);
+        background-size: 30px 30px;
+        animation: glitter-animation 8s linear infinite;
+        -webkit-background-clip: text;
+        -moz-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        mix-blend-mode: screen;
+        opacity: 0.8;
+      }
+      
+      @keyframes parallax-drift {
+        0% { transform: translateX(0) translateY(0); }
+        100% { transform: translateX(-50px) translateY(-25px); }
+      }
+      .animate-parallax-drift {
+        animation: parallax-drift 120s linear infinite alternate;
+      }
+      @keyframes glitch-effect {
+        0%, 100% { transform: translate(0, 0); opacity: 1; }
+        10% { transform: translate(-2px, 2px); }
+        20% { transform: translate(2px, -2px); }
+        30% { transform: translate(-2px, -2px); }
+        40% { transform: translate(2px, 2px); }
+        50% { transform: translate(0, 0); opacity: 0.8; }
+      }
+      .animate-glitch {
+        animation: glitch-effect 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+      }
+      @keyframes fade-in-out {
+        0% { opacity: 0; }
+        50% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+      @keyframes correct-border-flash {
+        0% { border-color: rgba(74, 222, 128, 0.9); } /* emerald-400 */
+        100% { border-color: rgba(255, 255, 255, 0.2); } /* original border-white/20 */
+      }
+      .animate-correct-flash {
+        animation: correct-border-flash 0.2s ease-out forwards;
+      }
+      @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+      }
+      .animate-shake {
+        animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+      }
+      .correct-swipe-bg {
+        --tw-bg-opacity: 1;
+        background-color: rgba(22, 163, 74, 0.2);
+      }
+      .incorrect-swipe-bg {
+        --tw-bg-opacity: 1;
+        background-color: rgba(220, 38, 38, 0.2);
+      }
+      @keyframes breakthrough {
+        0% { opacity: 0; transform: scale(0.5); }
+        50% { opacity: 1; transform: scale(1.2); }
+        100% { opacity: 0; transform: scale(1.5); }
+      }
+      .animate-breakthrough {
+        animation: breakthrough 1s ease-out forwards;
+      }
+      @keyframes sparkle-animation {
+        0% { transform: scale(0); opacity: 1; }
+        100% { transform: scale(1); opacity: 0; }
+      }
+      .sparkle {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        animation: sparkle-animation 0.8s ease-out forwards;
+        z-index: 100;
+      }
+      @keyframes sparkle-animation {
+        0% { transform: scale(0); opacity: 1; }
+        50% { opacity: 1; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+=======
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,4 +242,5 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
+>>>>>>> origin/feat/game-updates-and-refactor
 </html>

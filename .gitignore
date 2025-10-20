@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+node_modules/*
+
+# Foundry
+contracts/out/
+contracts/cache/
+
+# Keystore
+/keystore-0x12F1B38DC35AA65B50E5849d02559078953aE24b.json

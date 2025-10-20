@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Direction, GameState, AtmosphereStage, getOppositeDirection } from '../lib/types';
