@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 
 type SubmissionState = 'idle' | 'pending' | 'success' | 'error';
@@ -46,6 +47,8 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, onPlayAga
     </div>
   );
 =======
+=======
+>>>>>>> origin/feat/smart-contracts
 import React, { useEffect } from 'react';
 import { useWriteContract } from 'wagmi';
 import { resetStrikesAbi, resetStrikesAddress } from '../../lib/contracts';

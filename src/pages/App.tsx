@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:src/App.tsx
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -469,6 +470,8 @@ export default function App() {
     </main>
   );
 =======
+=======
+>>>>>>> origin/feat/smart-contracts
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Direction, GameState, AtmosphereStage, getOppositeDirection } from '../lib/types';
@@ -849,5 +852,8 @@ export default function App() {
       {renderGameState()}
     </main>
   );
+<<<<<<< HEAD
 >>>>>>> origin/feat/game-updates-and-refactor:src/pages/App.tsx
+=======
+>>>>>>> origin/feat/smart-contracts
 }
