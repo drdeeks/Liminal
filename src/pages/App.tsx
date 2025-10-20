@@ -1,17 +1,18 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-// FIX: Updated import paths to match the 'src' directory structure.
-import { Direction, GameState, AtmosphereStage, getOppositeDirection } from './types';
-import { DirectionCard } from './components/game/DirectionCard';
-import { Scoreboard } from './components/ui/Scoreboard';
-import { GameOverScreen } from './components/screens/GameOverScreen';
-import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
-import { CountdownTimer } from './components/game/CountdownTimer';
-import { InfoScreen } from './components/screens/InfoScreen';
-import { StrikesDisplay } from './components/game/StrikesDisplay';
-import { InfoIcon } from './components/ui/icons';
-import { AtmosphereManager } from './systems/AtmosphereManager';
-import { AudioManager, AudioManagerHandle } from './systems/AudioManager';
+import { Direction, GameState, AtmosphereStage, getOppositeDirection } from '../lib/types';
+import { DirectionCard } from '../components/game/DirectionCard';
+import { Scoreboard } from '../components/ui/Scoreboard';
+import { GameOverScreen } from '../components/screens/GameOverScreen';
+import { LeaderboardScreen } from '../components/screens/LeaderboardScreen';
+import { CountdownTimer } from '../components/game/CountdownTimer';
+import { InfoScreen } from '../components/screens/InfoScreen';
+import { StrikesDisplay } from '../components/game/StrikesDisplay';
+import { InfoIcon } from '../components/ui/icons';
+import { AtmosphereManager } from '../systems/AtmosphereManager';
+import { AudioManager, AudioManagerHandle } from '../systems/AudioManager';
+import { useWriteContract } from 'wagmi';
+import { gmAbi, gmAddress } from '../lib/contracts';
 
 const TOTAL_SCORE_KEY = 'liminalTotalScore';
 const JOKER_CHANCE = 0.15; // 15% chance for a joker card
@@ -65,6 +66,15 @@ export default function App() {
   const audioManagerRef = useRef<AudioManagerHandle>(null);
   const glitchIntervalRef = useRef<number | null>(null);
   const keydownProcessed = useRef(false);
+  const { writeContract } = useWriteContract();
+
+  const handleGm = () => {
+    writeContract({
+      address: gmAddress,
+      abi: gmAbi,
+      functionName: 'gm',
+    });
+  };
 
   useEffect(() => {
     try {
@@ -304,6 +314,12 @@ export default function App() {
               className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
             >
               Start Game
+            </button>
+            <button
+              onClick={handleGm}
+              className="mt-4 bg-blue-600/50 text-white font-bold py-2 px-6 rounded-lg text-xl shadow-lg hover:bg-blue-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+            >
+              GM
             </button>
           </div>
         );

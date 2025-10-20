@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useWriteContract } from 'wagmi';
+import { resetStrikesAbi, resetStrikesAddress } from '../../lib/contracts';
 
 type SubmissionState = 'idle' | 'pending' | 'success' | 'error';
 
@@ -10,12 +12,28 @@ interface GameOverScreenProps {
 }
 
 export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, onPlayAgain, onSubmitScore, submissionState }) => {
+  const { data: hash, isPending, writeContract } = useWriteContract();
+
+  const handleResetStrikes = () => {
+    writeContract({
+      address: resetStrikesAddress,
+      abi: resetStrikesAbi,
+      functionName: 'resetStrikes',
+    });
+  };
+
+  useEffect(() => {
+    if (hash) {
+      // For now, we'll just restart the game. In a real app, you'd wait for the transaction to be mined.
+      onPlayAgain();
+    }
+  }, [hash, onPlayAgain]);
   
   const getSubmitButtonText = () => {
     switch (submissionState) {
         case 'pending': return 'Submitting...';
         case 'success': return 'Score Submitted!';
-        case 'error': return 'Submission Failed';
+        case 'error':return 'Submission Failed';
         default: return 'Submit Score';
     }
   };
@@ -42,10 +60,11 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, onPlayAga
           {getSubmitButtonText()}
         </button>
         <button
-          onClick={() => alert('Contract call for refreshing strikes would happen here.')}
-          className="bg-purple-600/50 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-purple-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+          onClick={handleResetStrikes}
+          disabled={isPending}
+          className="bg-purple-600/50 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-purple-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Refresh Strikes
+          {isPending ? 'Resetting...' : 'Refresh Strikes'}
         </button>
       </div>
     </div>
