@@ -12,7 +12,7 @@ import { StrikesDisplay } from '../components/game/StrikesDisplay';
 import { InfoIcon } from '../components/ui/icons';
 import { AtmosphereManager } from '../systems/AtmosphereManager';
 import { AudioManager, AudioManagerHandle } from '../systems/AudioManager';
-import { useWriteContract } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
 import { gmAbi, gmAddress } from '../lib/contracts';
 
 const TOTAL_SCORE_KEY = 'liminalTotalScore';
@@ -67,6 +67,7 @@ export default function App() {
   const audioManagerRef = useRef<AudioManagerHandle>(null);
   const glitchIntervalRef = useRef<number | null>(null);
   const keydownProcessed = useRef(false);
+  const { isConnected } = useAccount();
   const { writeContract } = useWriteContract();
 
   const handleGm = () => {
@@ -330,6 +331,27 @@ export default function App() {
   const showLeaderboardButton = gameState === GameState.Start || gameState === GameState.GameOver;
   const showInfoButton = gameState === GameState.Start;
   const showAudioControls = gameState === GameState.Start;
+
+  if (!isConnected) {
+    return (
+      <main className="w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black">
+        <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in">
+          <h1 className="text-8xl font-black mb-4 text-glitter">Liminal</h1>
+          <p className="text-2xl mb-12 max-w-md text-shadow-pop">Connect your wallet to begin.</p>
+          {/* NOTE: The actual connection is handled by the Wagmi provider modal */}
+          <button
+            onClick={() => {
+              // This button is primarily for show, as the modal handles connection.
+              // You might want to trigger the modal programmatically here if not already visible.
+            }}
+            className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+          >
+            Connect Wallet
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black">

@@ -1,48 +1,30 @@
-<<<<<<< HEAD
 {
   "name": "liminal",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force --debug",
+    "dev:debug": "DEBUG=vite:* vite --force --clearScreen false",
+    "dev:polling": "vite --force --clearScreen false",
     "build": "vite build",
     "preview": "vite preview",
+    "verify": "playwright test",
     "deploy": "cd contracts && forge script script/DeployMonad.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY && cd .. && node scripts/update-config.js",
     "deploy:keystore": "cd contracts && forge script script/DeployMonad.s.sol --rpc-url $RPC_URL --keystore $KEYSTORE_PATH --sender $SENDER_ADDRESS --password $KEYSTORE_PASSWORD --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY && cd .. && node scripts/update-config.js"
   },
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.2.0",
     "@openzeppelin/contracts": "^5.4.0",
+    "@playwright/test": "^1.56.1",
+    "@tanstack/react-query": "^5.90.5",
+    "chokidar-cli": "^3.0.0",
     "ethers": "^6.15.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "solc": "^0.8.30",
-    "vite-plugin-node-polyfills": "^0.24.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
-  }
-}
-=======
-{
-  "name": "liminal",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@tanstack/react-query": "^5.90.5",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "viem": "^2.38.3",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "wagmi": "^2.18.1"
   },
   "devDependencies": {
@@ -52,4 +34,3 @@
     "vite": "^6.2.0"
   }
 }
->>>>>>> origin/feat/game-updates-and-refactor
