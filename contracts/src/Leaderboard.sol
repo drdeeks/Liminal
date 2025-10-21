@@ -15,33 +15,25 @@ contract Leaderboard is Owned, Pausable {
     mapping(address => uint256) private userIndex;
     mapping(address => bool) public hasScore;
 
-    event ScoreUpdated(address indexed user, uint256 newTotalScore);
+    event ScoreUpdated(address indexed user, uint256 score);
 
     constructor() Owned(msg.sender) {}
 
-    function updateScore(uint256 _scoreToAdd) external whenNotPaused {
-        address user = msg.sender;
-
-        uint256 newTotalScore = userScore[user] + _scoreToAdd;
-        userScore[user] = newTotalScore;
-
-        if (!hasScore[user]) {
-            scores.push(Entry(user, newTotalScore));
-            userIndex[user] = scores.length - 1;
-            hasScore[user] = true;
+    function updateScore(address _user, uint256 _score) external onlyOwner whenNotPaused {
+        require(_user != address(0), "Invalid user address");
+        userScore[_user] = _score;
+        if (!hasScore[_user]) {
+            scores.push(Entry(_user, _score));
+            userIndex[_user] = scores.length - 1;
+            hasScore[_user] = true;
         } else {
-            scores[userIndex[user]].score = newTotalScore;
+            scores[userIndex[_user]].score = _score;
         }
-
-        emit ScoreUpdated(user, newTotalScore);
+        emit ScoreUpdated(_user, _score);
     }
 
     function getScores() external view returns (Entry[] memory) {
         return scores;
-    }
-
-    function getScore(address _user) external view returns (uint256) {
-        return userScore[_user];
     }
 
     function pause() external onlyOwner {
