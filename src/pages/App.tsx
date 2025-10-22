@@ -1,382 +1,314 @@
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import React from 'react';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Direction, GameState, AtmosphereStage, getOppositeDirection } from '../lib/types';
 import { DirectionCard } from '../components/game/DirectionCard';
-import { Scoreboard } from '../components/ui/Scoreboard';
 import { GameOverScreen } from '../components/screens/GameOverScreen';
+import { HowToPlayScreen } from '../components/screens/HowToPlayScreen';
 import { LeaderboardScreen } from '../components/screens/LeaderboardScreen';
 import { CountdownTimer } from '../components/game/CountdownTimer';
-import { InfoScreen } from '../components/screens/InfoScreen';
 import { StrikesDisplay } from '../components/game/StrikesDisplay';
-import { InfoIcon } from '../components/ui/icons';
+import { Scoreboard } from '../components/ui/Scoreboard';
+import { SparkleController } from '../components/ui/SparkleController';
 import { AtmosphereManager } from '../systems/AtmosphereManager';
 import { AudioManager, AudioManagerHandle } from '../systems/AudioManager';
-import { useWriteContract } from 'wagmi';
-import { gmAbi, gmAddress } from '../lib/contracts';
+import { Direction, getRandomDirection } from '../lib/types';
+import { gmrAbi, gmrAddress, leaderboardAbi, leaderboardAddress, resetStrikesAbi, resetStrikesAddress } from '../lib/contracts';
+import { base } from 'wagmi/chains';
+import { monad } from '../lib/wagmi';
+import sdk from '@farcaster/miniapp-sdk';
 
-const TOTAL_SCORE_KEY = 'liminalTotalScore';
-const JOKER_CHANCE = 0.15; // 15% chance for a joker card
-const SWIPE_ANIMATION_DURATION = 300; // ms for the card to fly off-screen
+type GameState = 'menu' | 'howToPlay' | 'countdown' | 'playing' | 'gameOver' | 'leaderboard';
 
-// --- Refined Timing Curve ---
-const TIME_START = 2000; // 2.0s at swipe 0
-const TIME_MIN = 500;    // 0.5s at swipe 250
-const SWIPES_MIN = 250;
-// A decay constant chosen to create a smooth, exponential difficulty curve.
-// This value is calculated to make the curve feel balanced, closely matching the
-// original design's milestone (approx. 1.25s at 50 swipes) while being continuous.
-const DECAY_FACTOR = 0.01386;
+const INITIAL_STRIKES = 3;
+const GAME_DURATION_MS = 30000;
 
+const App: React.FC = () => {
+    const { address, isConnected, chain } = useAccount();
+    const { connect, connectors } = useConnect();
+    const { disconnect } = useDisconnect();
+    const { data: hash, error: writeError, isPending, writeContract } = useWriteContract();
+    const { data: gmrHash, writeContract: writeGmrContract } = useWriteContract();
+    const { data: resetStrikesHash, writeContract: writeResetStrikesContract } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-const getRandomDirection = (): Direction => {
-  const directions = [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
-  return directions[Math.floor(Math.random() * directions.length)];
-};
+    const [gameState, setGameState] = useState<GameState>('menu');
+    const [score, setScore] = useState(0);
+    const [strikes, setStrikes] = useState(INITIAL_STRIKES);
+    const [highScore, setHighScore] = useState(0);
+    const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+    const [currentDirection, setCurrentDirection] = useState(getRandomDirection());
+    const [isJoker, setIsJoker] = useState(false);
+    const [cardKey, setCardKey] = useState(0);
+    const [shake, setShake] = useState(false);
+    const [sparkle, setSparkle] = useState(false);
+    const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
 
-const getAtmosphereStage = (score: number): AtmosphereStage => {
-    if (score >= 1000) return AtmosphereStage.DEEP_LIMINAL;
-    if (score >= 500) return AtmosphereStage.THRESHOLD_3;
-    if (score >= 250) return AtmosphereStage.THRESHOLD_2;
-    if (score >= 100) return AtmosphereStage.THRESHOLD_1;
-    return AtmosphereStage.EARLY;
-};
+    const audioManager = useRef<AudioManagerHandle>(null);
 
-type SubmissionState = 'idle' | 'pending' | 'success' | 'error';
+    const handleGenerateNewCard = useCallback(() => {
+        const isJokerCard = Math.random() < 0.25;
+        setIsJoker(isJokerCard);
+        setCurrentDirection(getRandomDirection());
+        setCardKey(prev => prev + 1);
+        setKeyboardSwipeOutDirection(null);
+    }, []);
 
-export default function App() {
-  const [gameState, setGameState] = useState<GameState>(GameState.Start);
-  const [score, setScore] = useState(0);
-  const [correctSwipes, setCorrectSwipes] = useState(0);
-  const [strikes, setStrikes] = useState(0);
-  const [multiplier, setMultiplier] = useState(1);
-  const [currentDirection, setCurrentDirection] = useState<Direction>(getRandomDirection());
-  const [isJoker, setIsJoker] = useState(false);
-  const [totalScore, setTotalScore] = useState(0);
-  const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
-  const [cardKey, setCardKey] = useState(0);
-  const [isInfoVisible, setInfoVisible] = useState(false);
-  const [atmosphereStage, setAtmosphereStage] = useState<AtmosphereStage>(AtmosphereStage.EARLY);
-  const [isMusicMuted, setIsMusicMuted] = useState(false);
-  const [isSfxMuted, setIsSfxMuted] = useState(false);
-  const [showGlitch, setShowGlitch] = useState(false);
-  const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
+    const handleCorrectSwipe = useCallback(() => {
+        setScore(prev => prev + 100);
+        setSparkle(true);
+        audioManager.current?.playCorrectSwipe();
+        handleGenerateNewCard();
+    }, [handleGenerateNewCard]);
 
+    const handleIncorrectSwipe = useCallback(() => {
+        setStrikes(prev => prev - 1);
+        setShake(true);
+        audioManager.current?.playWrongSwipe();
+        setTimeout(() => setShake(false), 500);
+        handleGenerateNewCard();
+    }, [handleGenerateNewCard]);
 
-  const timerId = useRef<number | null>(null);
-  const audioManagerRef = useRef<AudioManagerHandle>(null);
-  const glitchIntervalRef = useRef<number | null>(null);
-  const keydownProcessed = useRef(false);
-  const { writeContract } = useWriteContract();
+    const startGame = () => {
+        setGameState('howToPlay');
+    };
 
-  const handleGm = () => {
-    writeContract({
-      address: gmAddress,
-      abi: gmAbi,
-      functionName: 'gm',
-    });
-  };
+    const handleStartGame = () => {
+        setScore(0);
+        setStrikes(INITIAL_STRIKES);
+        setGameState('countdown');
+    };
 
-  useEffect(() => {
-    try {
-      const storedTotalScore = localStorage.getItem(TOTAL_SCORE_KEY);
-      if (storedTotalScore) setTotalScore(JSON.parse(storedTotalScore));
-      
-      const storedMusicMute = localStorage.getItem('liminalMusicMuted');
-      if (storedMusicMute) setIsMusicMuted(JSON.parse(storedMusicMute));
+    const handleCountdownComplete = () => {
+        setGameState('playing');
+        setGameStartTime(performance.now());
+    };
 
-      const storedSfxMute = localStorage.getItem('liminalSfxMuted');
-      if (storedSfxMute) setIsSfxMuted(JSON.parse(storedSfxMute));
+    const handleTimesUp = useCallback(() => {
+        setGameState('gameOver');
+        if (score > highScore) {
+            setHighScore(score);
+        }
+    }, [score, highScore]);
 
-    } catch (error) {
-      console.error("Failed to load from localStorage", error);
-    }
-  }, []);
+    const handlePlayAgain = () => {
+        startGame();
+    };
 
-  const triggerGlitch = useCallback((force = false) => {
-    // Only trigger if in the right stage and by random chance, or if forced
-    if (atmosphereStage === AtmosphereStage.DEEP_LIMINAL && (force || Math.random() < 0.3)) {
-        setShowGlitch(true);
-        setTimeout(() => setShowGlitch(false), 200);
-    }
-  }, [atmosphereStage]);
+    const handleViewLeaderboard = () => {
+        setGameState('leaderboard');
+    };
 
-  useEffect(() => {
-    if (atmosphereStage === AtmosphereStage.DEEP_LIMINAL) {
-        glitchIntervalRef.current = window.setInterval(() => {
-            // Low chance for a random, ambient glitch
-            if (Math.random() < 0.1) {
-                triggerGlitch(true); // Force trigger for ambient glitches
+    const handleBackToMenu = () => {
+        setGameState('menu');
+    };
+
+    const handleGm = () => {
+        if (!address || !chain) return;
+        const contractAddress = chain.id === monad.id ? gmrAddress[monad.id] : gmrAddress[base.id];
+        if (!contractAddress) {
+            console.error(`No GMR contract address found for chain ID ${chain.id}`);
+            return;
+        }
+
+        writeGmrContract({
+            address: contractAddress,
+            abi: gmrAbi,
+            functionName: 'gm',
+            args: [],
+        });
+    };
+
+    const handleResetStrikes = () => {
+        if (!address || !chain) return;
+        const contractAddress = chain.id === monad.id ? resetStrikesAddress[monad.id] : resetStrikesAddress[base.id];
+        if (!contractAddress) {
+            console.error(`No ResetStrikes contract address found for chain ID ${chain.id}`);
+            return;
+        }
+
+        writeResetStrikesContract({
+            address: contractAddress,
+            abi: resetStrikesAbi,
+            functionName: 'resetStrikes',
+            args: [],
+        });
+    };
+
+    const handleSubmitScore = useCallback(() => {
+        if (!address || !chain) return;
+        const contractAddress = chain.id === monad.id ? leaderboardAddress[monad.id] : leaderboardAddress[base.id];
+        if (!contractAddress) {
+            console.error(`No leaderboard contract address found for chain ID ${chain.id}`);
+            return;
+        }
+
+        writeContract({
+            address: contractAddress,
+            abi: leaderboardAbi,
+            functionName: 'updateScore',
+            args: [BigInt(score)],
+        });
+    }, [address, chain, score, writeContract]);
+
+    useEffect(() => {
+        if (strikes <= 0) {
+            setGameState('gameOver');
+        }
+    }, [strikes]);
+
+    useEffect(() => {
+        sdk.actions.ready();
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (gameState !== 'playing') return;
+
+            let swipedDir: Direction | null = null;
+            switch (event.key) {
+                case 'ArrowUp': swipedDir = Direction.Up; break;
+                case 'ArrowDown': swipedDir = Direction.Down; break;
+                case 'ArrowLeft': swipedDir = Direction.Left; break;
+                case 'ArrowRight': swipedDir = Direction.Right; break;
+                default: return;
             }
-        }, 3000); // Check every 3 seconds
-    }
 
-    return () => {
-        if (glitchIntervalRef.current) {
-            clearInterval(glitchIntervalRef.current);
+            if (swipedDir !== null) {
+                setKeyboardSwipeOutDirection(swipedDir);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [gameState]);
+
+    const renderGameState = () => {
+        switch (gameState) {
+            case 'howToPlay':
+                return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />;
+            case 'countdown':
+                return (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <AnimatePresence>
+                        <motion.div
+                          key="countdown"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.5, ease: 'easeInOut' }}
+                          className="text-white text-6xl font-bold"
+                        >
+                            Get Ready...
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                );
+            case 'playing':
+                return (
+                    <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
+                        <AnimatePresence>
+                            <motion.div
+                                key={cardKey}
+                                initial={{ scale: 0.8, y: 100, opacity: 0 }}
+                                animate={{ scale: 1, y: 0, opacity: 1 }}
+                                exit={{ scale: 0.8, x: '100vw', opacity: 0 }}
+                                transition={{ duration: 0.35, ease: 'easeOut' }}
+                                className="absolute"
+                            >
+                                <DirectionCard
+                                    keyProp={cardKey}
+                                    direction={currentDirection}
+                                    onCorrectSwipe={handleCorrectSwipe}
+                                    onIncorrectSwipe={handleIncorrectSwipe}
+                                    isJoker={isJoker}
+                                    score={score}
+                                    keyboardSwipeOutDirection={keyboardSwipeOutDirection}
+                                />
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+                );
+            case 'gameOver':
+                return <GameOverScreen
+                    score={score}
+                    highScore={highScore}
+                    onPlayAgain={handlePlayAgain}
+                    onViewLeaderboard={handleViewLeaderboard}
+                    onSubmitScore={handleSubmitScore}
+                    isSubmitting={isPending || isConfirming}
+                    isSuccess={isConfirmed}
+                    error={writeError}
+                    onResetStrikes={handleResetStrikes}
+                />;
+            case 'leaderboard':
+                return <LeaderboardScreen onBack={handleBackToMenu} />;
+            case 'menu':
+            default:
+                return (
+                    <div className="flex flex-col items-center justify-center h-full">
+                        <h1 className="text-6xl font-bold text-white mb-8 title-shadow">Liminal</h1>
+                        {isConnected ? (
+                            <div className="flex flex-col items-center">
+                                <p className="text-white text-lg mb-4">Welcome, {address?.slice(0, 6)}...{address?.slice(-4)}</p>
+                                <button
+                                    className="px-8 py-4 bg-green-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105"
+                                    onClick={startGame}
+                                >
+                                    Start Game
+                                </button>
+                                <button
+                                    className="mt-4 px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow hover:bg-gray-700 transition-colors"
+                                    onClick={() => disconnect()}
+                                >
+                                    Disconnect
+                                </button>
+                                <button
+                                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
+                                    onClick={handleGm}
+                                >
+                                    Say GM
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col space-y-2">
+                                {connectors.map((connector) => (
+                                    <button
+                                        key={connector.uid}
+                                        className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
+                                        onClick={() => connect({ connector })}
+                                    >
+                                        Connect Wallet
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
         }
     };
-  }, [atmosphereStage, triggerGlitch]);
 
+    return (
+        <main className={`w-screen h-screen overflow-hidden ${shake ? 'animate-shake' : ''}`}>
+            <AtmosphereManager score={score} />
+            <SparkleController on={sparkle} onComplete={() => setSparkle(false)} />
+            <AudioManager ref={audioManager} isMusicMuted={false} isSfxMuted={false} multiplier={0} onMilestone={() => {}} stage={0} />
 
-  const handleSubmitScore = useCallback(async () => {
-    if (submissionState !== 'idle') return;
-
-    setSubmissionState('pending');
-    
-    // Simulate async on-chain validation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    try {
-        const newTotalScore = totalScore + score;
-        setTotalScore(newTotalScore);
-        localStorage.setItem(TOTAL_SCORE_KEY, JSON.stringify(newTotalScore));
-        setSubmissionState('success');
-    } catch (error) {
-        console.error("Failed to submit score:", error);
-        setSubmissionState('error');
-    }
-  }, [score, totalScore, submissionState]);
-  
-  const getCardTime = useCallback(() => {
-    if (correctSwipes >= SWIPES_MIN) {
-      return TIME_MIN;
-    }
-
-    // Uses a smooth exponential decay curve for a more balanced and continuous
-    // difficulty progression, removing the "corners" of the previous linear segments.
-    // The time decreases from TIME_START and asymptotically approaches TIME_MIN.
-    const timeRange = TIME_START - TIME_MIN;
-    const decay = Math.exp(-DECAY_FACTOR * correctSwipes);
-    
-    return timeRange * decay + TIME_MIN;
-  }, [correctSwipes]);
-
-  const handleGameOver = useCallback(() => {
-    if (timerId.current) clearTimeout(timerId.current);
-    setSubmissionState('idle'); // Allow submission
-    setGameState(GameState.GameOver);
-  }, []);
-
-  const generateNextCard = useCallback(() => {
-      triggerGlitch();
-      keydownProcessed.current = false; // Allow next key press
-      setKeyboardSwipeOutDirection(null); // Reset keyboard swipe trigger
-      setCurrentDirection(getRandomDirection());
-      setIsJoker(Math.random() < JOKER_CHANCE);
-      setCardKey(prev => prev + 1);
-  }, [triggerGlitch]);
-
-  useEffect(() => {
-      const newStage = getAtmosphereStage(score);
-      setAtmosphereStage(newStage);
-  }, [score]);
-
-  useEffect(() => {
-    if (gameState === GameState.Playing) {
-      if (timerId.current) clearTimeout(timerId.current);
-      const duration = getCardTime();
-      timerId.current = window.setTimeout(() => handleIncorrectSwipe(true), duration);
-    } else {
-      if (timerId.current) clearTimeout(timerId.current);
-    }
-    return () => {
-      if (timerId.current) clearTimeout(timerId.current);
-    };
-  }, [gameState, cardKey, getCardTime]);
-
-  const handleCorrectSwipe = useCallback(() => {
-    if (timerId.current) clearTimeout(timerId.current);
-    audioManagerRef.current?.playCorrectSwipe();
-    
-    const newCorrectSwipes = correctSwipes + 1;
-    setCorrectSwipes(newCorrectSwipes);
-    
-    let currentMultiplier = 1;
-    if (newCorrectSwipes > 100) {
-      currentMultiplier = 1 + Math.floor((newCorrectSwipes - 100) / 50) + 1;
-    }
-    setMultiplier(currentMultiplier);
-    
-    setScore(prev => prev + (1 * currentMultiplier));
-    generateNextCard();
-  }, [correctSwipes, generateNextCard]);
-
-  const handleIncorrectSwipe = useCallback((isTimeout = false) => {
-    if (timerId.current) clearTimeout(timerId.current);
-    audioManagerRef.current?.playWrongSwipe();
-
-    const newStrikes = strikes + 1;
-    setStrikes(newStrikes);
-    
-    if (newStrikes >= 3) {
-      handleGameOver();
-    } else {
-      generateNextCard();
-    }
-  }, [strikes, handleGameOver, generateNextCard]);
-  
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (gameState !== GameState.Playing || keydownProcessed.current) return;
-
-    let swipedDirection: Direction | null = null;
-    switch (event.key) {
-        case 'ArrowUp': swipedDirection = Direction.Up; break;
-        case 'ArrowDown': swipedDirection = Direction.Down; break;
-        case 'ArrowLeft': swipedDirection = Direction.Left; break;
-        case 'ArrowRight': swipedDirection = Direction.Right; break;
-        default: return;
-    }
-    
-    event.preventDefault();
-    keydownProcessed.current = true; // Prevent multiple key presses for one card
-
-    const targetDirection = isJoker ? getOppositeDirection(currentDirection) : currentDirection;
-    
-    if (swipedDirection === targetDirection) {
-        setKeyboardSwipeOutDirection(swipedDirection);
-        setTimeout(handleCorrectSwipe, SWIPE_ANIMATION_DURATION);
-    } else {
-        handleIncorrectSwipe();
-    }
-  }, [gameState, isJoker, currentDirection, handleCorrectSwipe, handleIncorrectSwipe]);
-
-  useEffect(() => {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-          window.removeEventListener('keydown', handleKeyDown);
-      };
-  }, [handleKeyDown]);
-
-
-  const startGame = () => {
-    audioManagerRef.current?.unlockAudio();
-    setScore(0);
-    setCorrectSwipes(0);
-    setStrikes(0);
-    setMultiplier(1);
-    setCurrentDirection(getRandomDirection());
-    setIsJoker(false);
-    setSubmissionState('idle');
-    setCardKey(prev => prev + 1);
-    keydownProcessed.current = false;
-    setGameState(GameState.Playing);
-  };
-  
-  const toggleMusicMute = () => {
-    const newMuteState = !isMusicMuted;
-    setIsMusicMuted(newMuteState);
-    localStorage.setItem('liminalMusicMuted', JSON.stringify(newMuteState));
-  };
-
-  const toggleSfxMute = () => {
-      const newMuteState = !isSfxMuted;
-      setIsSfxMuted(newMuteState);
-      localStorage.setItem('liminalSfxMuted', JSON.stringify(newMuteState));
-  };
-  
-  const renderGameState = () => {
-    switch (gameState) {
-      case GameState.Playing:
-        return (
-          <div className="flex flex-col items-center justify-center h-full w-full">
-            <Scoreboard score={score} multiplier={multiplier} />
-            <div className={`flex flex-col items-center justify-center ${showGlitch ? 'animate-glitch' : ''}`}>
-                <div className="relative w-full flex flex-col items-center justify-start pt-32 h-96">
-                    <StrikesDisplay strikes={strikes} />
-                    <CountdownTimer duration={getCardTime()} key={cardKey} score={score} />
-                </div>
-                <div className="relative">
-                  <DirectionCard 
-                    direction={currentDirection} 
-                    keyProp={cardKey}
-                    onCorrectSwipe={handleCorrectSwipe}
-                    onIncorrectSwipe={handleIncorrectSwipe}
-                    isJoker={isJoker}
-                    score={score}
-                    keyboardSwipeOutDirection={keyboardSwipeOutDirection}
-                  />
-                </div>
+            <div className="absolute top-0 left-0 right-0 p-4 z-10 flex justify-between items-center">
+                <Scoreboard score={score} />
+                {gameState === 'playing' && gameStartTime && (
+                    <CountdownTimer
+                        startTime={gameStartTime}
+                        duration={GAME_DURATION_MS}
+                        onTimesUp={handleTimesUp}
+                    />
+                )}
+                <StrikesDisplay strikes={strikes} />
             </div>
-          </div>
-        );
-      case GameState.GameOver:
-        return <GameOverScreen score={score} onPlayAgain={startGame} onSubmitScore={handleSubmitScore} submissionState={submissionState} />;
-      case GameState.Leaderboard:
-        return <LeaderboardScreen totalScore={totalScore} onBack={() => setGameState(GameState.Start)} />;
-      case GameState.Start:
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in">
-            <h1 className="text-8xl font-black mb-4 text-glitter">Liminal</h1>
-            <p className="text-2xl mb-12 max-w-md text-shadow-pop">The deeper you go, the more it changes. Three strikes. Good luck.</p>
-            <button
-              onClick={startGame}
-              className="bg-black/20 text-white font-bold py-4 px-10 rounded-lg text-3xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
-            >
-              Start Game
-            </button>
-            <button
-              onClick={handleGm}
-              className="mt-4 bg-blue-600/50 text-white font-bold py-2 px-6 rounded-lg text-xl shadow-lg hover:bg-blue-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
-            >
-              GM
-            </button>
-          </div>
-        );
-    }
-  };
 
-  const showLeaderboardButton = gameState === GameState.Start || gameState === GameState.GameOver;
-  const showInfoButton = gameState === GameState.Start;
-  const showAudioControls = gameState === GameState.Start;
+            {renderGameState()}
+        </main>
+    );
+};
 
-  return (
-    <main className="w-screen h-screen flex flex-col items-center justify-center overflow-hidden relative bg-black">
-      <AtmosphereManager stage={atmosphereStage} />
-      <AudioManager 
-        ref={audioManagerRef} 
-        stage={atmosphereStage} 
-        multiplier={multiplier} 
-        isMusicMuted={isMusicMuted} 
-        isSfxMuted={isSfxMuted}
-        onMilestone={() => triggerGlitch(true)} 
-      />
-
-      {isInfoVisible && <InfoScreen onClose={() => setInfoVisible(false)} />}
-      
-      {showLeaderboardButton && (
-        <button
-          onClick={() => setGameState(GameState.Leaderboard)}
-          className="absolute top-4 right-4 bg-black/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black/40 transition-colors text-shadow-pop border-2 border-white/20 backdrop-blur-sm z-10"
-        >
-          Leaderboard
-        </button>
-      )}
-
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
-        {showInfoButton && (
-            <button
-            onClick={() => setInfoVisible(true)}
-            className="text-white p-2 rounded-full bg-black/20 hover:bg-black/40 transition-colors border-2 border-white/20 backdrop-blur-sm"
-            aria-label="How to play"
-            >
-            <InfoIcon />
-            </button>
-        )}
-        {showAudioControls && (
-            <>
-                <button onClick={toggleMusicMute} className="text-white p-2 rounded-full bg-black/20 hover:bg-black/40 transition-colors border-2 border-white/20 backdrop-blur-sm">
-                    {isMusicMuted ? '🎵 OFF' : '🎵 ON'}
-                </button>
-                <button onClick={toggleSfxMute} className="text-white p-2 rounded-full bg-black/20 hover:bg-black/40 transition-colors border-2 border-white/20 backdrop-blur-sm">
-                    {isSfxMuted ? '🔊 OFF' : '🔊 ON'}
-                </button>
-            </>
-        )}
-      </div>
-
-      {renderGameState()}
-    </main>
-  );
-}
+export default App;

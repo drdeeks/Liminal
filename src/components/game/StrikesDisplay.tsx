@@ -4,14 +4,14 @@ interface StrikesDisplayProps {
   strikes: number;
 }
 
-const STRIKE_CHAR = 'X';
+const MAX_STRIKES = 3;
 
 export const StrikesDisplay: React.FC<StrikesDisplayProps> = ({ strikes }) => {
   return (
-    <div className="flex items-center justify-center gap-2 h-12" aria-label={`${strikes} strikes`}>
-      {strikes > 0 && Array.from({ length: strikes }).map((_, index) => (
-        <span key={index} className="text-rose-500 text-5xl font-black text-shadow-pop animate-fade-in-scale">
-          {STRIKE_CHAR}
+    <div className="flex space-x-2">
+      {Array.from({ length: MAX_STRIKES }).map((_, i) => (
+        <span key={i} className={`text-4xl font-bold ${i < strikes ? 'text-red-500' : 'text-gray-500'}`}>
+          X
         </span>
       ))}
     </div>

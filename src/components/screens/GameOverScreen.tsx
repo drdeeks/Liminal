@@ -1,45 +1,20 @@
-import React, { useEffect } from 'react';
-import { useWriteContract } from 'wagmi';
-import { resetStrikesAbi, resetStrikesAddress } from '../../lib/contracts';
+import React from 'react';
 
 type SubmissionState = 'idle' | 'pending' | 'success' | 'error';
 
 interface GameOverScreenProps {
   score: number;
+  highScore: number;
   onPlayAgain: () => void;
+  onViewLeaderboard: () => void;
   onSubmitScore: () => void;
-  submissionState: SubmissionState;
+  isSubmitting: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+  onResetStrikes: () => void;
 }
 
-export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, onPlayAgain, onSubmitScore, submissionState }) => {
-  const { data: hash, isPending, writeContract } = useWriteContract();
-
-  const handleResetStrikes = () => {
-    writeContract({
-      address: resetStrikesAddress,
-      abi: resetStrikesAbi,
-      functionName: 'resetStrikes',
-    });
-  };
-
-  useEffect(() => {
-    if (hash) {
-      // For now, we'll just restart the game. In a real app, you'd wait for the transaction to be mined.
-      onPlayAgain();
-    }
-  }, [hash, onPlayAgain]);
-  
-  const getSubmitButtonText = () => {
-    switch (submissionState) {
-        case 'pending': return 'Submitting...';
-        case 'success': return 'Score Submitted!';
-        case 'error':return 'Submission Failed';
-        default: return 'Submit Score';
-    }
-  };
-  
-  const isSubmitDisabled = submissionState === 'pending' || submissionState === 'success';
-
+export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, highScore, onPlayAgain, onViewLeaderboard, onSubmitScore, isSubmitting, isSuccess, error, onResetStrikes }) => {
   return (
     <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in-scale">
       <h1 className="text-6xl font-black mb-2 text-glitter">GAME OVER</h1>
@@ -54,18 +29,25 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, onPlayAga
         </button>
         <button
           onClick={onSubmitScore}
-          disabled={isSubmitDisabled}
+          disabled={isSubmitting || isSuccess}
           className="bg-green-600/50 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg hover:bg-green-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-green-600/50"
         >
-          {getSubmitButtonText()}
+          {isSubmitting ? 'Submitting...' : isSuccess ? 'Score Submitted!' : 'Submit Score'}
         </button>
         <button
-          onClick={handleResetStrikes}
-          disabled={isPending}
-          className="bg-purple-600/50 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-purple-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={onViewLeaderboard}
+            className="bg-blue-600/50 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg hover:bg-blue-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
         >
-          {isPending ? 'Resetting...' : 'Refresh Strikes'}
+            Leaderboard
         </button>
+        {score === 0 && (
+        <button
+            onClick={onResetStrikes}
+            className="bg-purple-600/50 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg hover:bg-purple-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+        >
+            Reset Strikes
+        </button>
+        )}
       </div>
     </div>
   );

@@ -1,49 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkle } from './Sparkle';
+import React, { FC, useEffect, useState } from 'react';
+import Sparkle from './Sparkle';
 
 interface SparkleControllerProps {
-    trigger: any;
+    on: boolean;
+    onComplete: () => void;
 }
 
-interface SparkleData {
-    id: number;
-    style: React.CSSProperties;
-}
+const SPARKLE_COUNT = 8;
+const SPARKLE_DURATION = 800;
 
-const SPARKLE_COUNT = 50;
-
-export const SparkleController: React.FC<SparkleControllerProps> = ({ trigger }) => {
-    const [sparkles, setSparkles] = useState<SparkleData[]>([]);
+const SparkleController: FC<SparkleControllerProps> = ({ on, onComplete }) => {
+    const [sparkles, setSparkles] = useState<{ id: string; x: number; y: number; size: number }[]>([]);
 
     useEffect(() => {
-        if (trigger) {
-            const newSparkles: SparkleData[] = [];
-            for (let i = 0; i < SPARKLE_COUNT; i++) {
-                const angle = Math.random() * 2 * Math.PI;
-                const radius = Math.random() * 250 + 50;
-                newSparkles.push({
-                    id: Date.now() + i,
-                    style: {
-                        top: `calc(50% + ${Math.sin(angle) * radius}px)`,
-                        left: `calc(50% + ${Math.cos(angle) * radius}px)`,
-                        transform: `scale(${Math.random() * 0.7 + 0.5})`,
-                        animationDuration: `${Math.random() * 0.6 + 0.4}s`,
-                        animationDelay: `${Math.random() * 0.2}s`,
-                    },
-                });
-            }
-            setSparkles(prev => [...prev, ...newSparkles]);
-            setTimeout(() => {
-                setSparkles(prev => prev.slice(SPARKLE_COUNT));
-            }, 1200);
+        if (on) {
+            const newSparkles = Array.from({ length: SPARKLE_COUNT }).map(() => ({
+                id: `sparkle-${Math.random()}`,
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 20 + 10,
+            }));
+            setSparkles(newSparkles);
+            const timer = setTimeout(() => {
+                setSparkles([]);
+                onComplete();
+            }, SPARKLE_DURATION);
+            return () => clearTimeout(timer);
         }
-    }, [trigger]);
+    }, [on, onComplete]);
 
     return (
-        <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
-            {sparkles.map(sparkle => (
-                <Sparkle key={sparkle.id} style={sparkle.style} />
+        <div className="absolute inset-0 pointer-events-none">
+            {sparkles.map(({ id, x, y, size }) => (
+                <Sparkle key={id} id={id} x={x} y={y} size={size} />
             ))}
         </div>
     );
 };
+
+export { SparkleController };

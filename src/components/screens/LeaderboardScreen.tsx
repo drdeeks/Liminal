@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ethers } from 'ethers';
-import { LEADERBOARD_CONTRACT_ADDRESS, LEADERBOARD_ABI } from '../../contract-config';
+import { useAccount, useReadContract } from 'wagmi';
+import { leaderboardAbi, leaderboardAddress } from '../../lib/contracts';
+import { base } from 'wagmi/chains';
+import { monad } from '../../lib/wagmi';
 
 interface LeaderboardScreenProps {
     onBack: () => void;
@@ -14,45 +16,31 @@ interface Player {
 const PAGE_SIZE = 10;
 
 export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
-    const [leaderboard, setLeaderboard] = useState<Player[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { chain } = useAccount();
     const [page, setPage] = useState(0);
-    const [playerCount, setPlayerCount] = useState(0);
 
-    const fetchLeaderboard = useCallback(async () => {
-        setLoading(true);
-        try {
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const contract = new ethers.Contract(LEADERBOARD_CONTRACT_ADDRESS, LEADERBOARD_ABI, provider);
+    const contractAddress = chain?.id === monad.id ? leaderboardAddress[monad.id] : leaderboardAddress[base.id];
 
-            const count = await contract.getPlayerCount();
-            setPlayerCount(count);
+    const { data: playerCountData, isLoading: isPlayerCountLoading } = useReadContract({
+        address: contractAddress,
+        abi: leaderboardAbi,
+        functionName: 'getPlayerCount',
+    });
 
-            const [addresses, scores] = await contract.getLeaderboard(page, PAGE_SIZE);
+    const { data: leaderboardData, isLoading: isLeaderboardLoading } = useReadContract({
+        address: contractAddress,
+        abi: leaderboardAbi,
+        functionName: 'getLeaderboard',
+        args: [BigInt(page), BigInt(PAGE_SIZE)],
+    });
 
-            const players = addresses.map((address: string, i: number) => ({
-                address,
-                score: scores[i].toNumber(),
-            }));
+    const playerCount = playerCountData ? Number(playerCountData) : 0;
+    const leaderboard: Player[] = leaderboardData ? (leaderboardData as [string[], bigint[]])[0].map((address, i) => ({
+        address,
+        score: Number((leaderboardData as [string[], bigint[]])[1][i]),
+    })).sort((a, b) => b.score - a.score) : [];
 
-            // The contract doesn't sort, so we sort on the client-side.
-            // Note: This sorting is only for the current page. For global sorting,
-            // the contract would need to be designed differently.
-            players.sort((a, b) => b.score - a.score);
-
-            setLeaderboard(players);
-        } catch (error) {
-            console.error("Failed to fetch leaderboard:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [page]);
-
-    useEffect(() => {
-        if (window.ethereum) {
-            fetchLeaderboard();
-        }
-    }, [fetchLeaderboard]);
+    const loading = isPlayerCountLoading || isLeaderboardLoading;
 
     return (
         <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in">
