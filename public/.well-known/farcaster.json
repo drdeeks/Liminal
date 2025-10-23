@@ -1,0 +1,20 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjkxNTIsInR5cGUiOiJjdXN0bogpIiwia2V5IjoiMHgwMmVmNzkwRGQ3OTkzQTM1ZkQ4NDdDMDUzRURkQUU5NDBEMDU1NTk2In0",
+    "payload": "eyJkb21haW4iOiJsaW1pbmFsLmdhbWUifQ",
+    "signature": "MHgxMGQwZGU4ZGYwZDUwZTdmMGIxN2YxMTU2NDI1MjRmZTY0MTUyZGU4ZGU1MWU0MThiYjU4ZjVmZmQxYjRjNDBiNGVlZTRhNDcwNmVmNjhlMzQ0ZGQ5MDBkYmQyMmNlMmVlZGY5ZGQ0N2JlNWRmNzMwYzUxNjE4OWVjZDJjY2Y0MDFj"
+  },
+    "splashImageUrl": "/liminal-assets/splash.png",
+    "splashBackgroundColor": "#000000"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Liminal",
+    "iconUrl": "/liminal-assets/icon.png",
+    "homeUrl": "https://liminal.game",
+    "imageUrl": "https://liminal.game/og-image.png",
+    "buttonTitle": "Start Playing",
+    "splashImageUrl": "https://liminal.game/splash.png",
+    "splashBackgroundColor": "#000000"
+  }
+}
