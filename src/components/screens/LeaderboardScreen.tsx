@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { leaderboardAbi, leaderboardAddress } from '../../lib/contracts';
 import { base } from 'wagmi/chains';
-import { monad } from '../../lib/wagmi';
+import { monadTestnet } from '../../lib/contracts';
 
 interface LeaderboardScreenProps {
     onBack: () => void;
@@ -19,7 +19,7 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
     const { chain } = useAccount();
     const [page, setPage] = useState(0);
 
-    const contractAddress = chain?.id === monad.id ? leaderboardAddress[monad.id] : leaderboardAddress[base.id];
+    const contractAddress = chain?.id === monadTestnet.id ? leaderboardAddress[monadTestnet.id] : leaderboardAddress[base.id];
 
     const { data: playerCountData, isLoading: isPlayerCountLoading } = useReadContract({
         address: contractAddress,

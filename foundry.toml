@@ -4,6 +4,8 @@ out = "contracts/out"
 libs = ["contracts/lib"]
 test = "contracts/test"
 cache_path = "contracts/cache"
+script = "contracts/script"
+load_dotenv = true
 
 # Compiler settings
 solc_version = "0.8.20"
@@ -16,8 +18,8 @@ evm_version = "cancun"
 
 # Remappings for dependencies
 remappings = [
-    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
-    "forge-std/=lib/forge-std/src/"
+    "@openzeppelin/contracts/=contracts/lib/openzeppelin-contracts/contracts/",
+    "forge-std/=contracts/lib/forge-std/src/"
 ]
 
 # Fuzz testing
@@ -41,10 +43,56 @@ multiline_func_header = "all"
 quote_style = "double"
 number_underscore = "thousands"
 
-# RPC endpoints
-[rpc_endpoints]
-monad_testnet = "https://testnet-rpc.monad.xyz"
+# ============================================
+# MONAD TESTNET
+# ============================================
+[profile.monadtest]
+eth_rpc_url = "${MONAD_RPC_URL}"
+chain_id = 10143
+sender = "${SENDER_ADDRESS}"
 
-# Etherscan API keys
+# ============================================
+# MONAD MAINNET (INACTIVE - Uncomment when live)
+# ============================================
+# [profile.monad]
+# eth_rpc_url = "https://rpc.monad.xyz"
+# chain_id = 143
+# sender = "${SENDER_ADDRESS}"
+# verify = true
+# [profile.monad.etherscan]
+# monad = { key = "${ETHERSCAN_API_KEY}", url = "https://explorer.monad.xyz/api" }
+
+# ============================================
+# BASE MAINNET
+# ============================================
+[profile.base]
+eth_rpc_url = "${BASE_RPC_URL}"
+chain_id = 8453
+sender = "${SENDER_ADDRESS}"
+verify = true
+[profile.base.etherscan]
+base = { key = "${BASESCAN_API_KEY}" }
+
+# ============================================
+# BASE SEPOLIA TESTNET
+# ============================================
+[profile.basetest]
+eth_rpc_url = "${BASE_SEPOLIA_RPC_URL}"
+chain_id = 84532
+sender = "${SENDER_ADDRESS}"
+verify = true
+[profile.basetest.etherscan]
+base_sepolia = { key = "${BASESCAN_API_KEY}" }
+
+# RPC endpoints for easy reference
+[rpc_endpoints]
+monad = "${MONAD_RPC_URL}"
+monad_testnet = "${MONAD_RPC_URL}"
+base = "${BASE_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+
+# Etherscan API configuration
 [etherscan]
 monad_testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://testnet-explorer.monad.xyz/api" }
+base = { key = "${BASESCAN_API_KEY}", chain = 8453, url = "https://api.basescan.org/api" }
+base_sepolia = { key = "${BASESCAN_API_KEY}", chain = 84532, url = "https://api-sepolia.basescan.org/api" }

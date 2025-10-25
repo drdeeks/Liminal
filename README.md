@@ -119,6 +119,18 @@ The smart contracts are located in the `contracts` directory and are managed wit
 
 **Important:** Deployment and verification must be performed separately for each target chain (Monad and Base).
 
+### Obtaining Price Feed Addresses
+
+For contracts that rely on external price data (like `ResetStrikes` for ETH/USD conversion), you will need the address of a reliable price feed oracle. Chainlink is a widely used decentralized oracle network that provides these feeds.
+
+To find the correct price feed address for your target network (e.g., Monad Testnet) and asset pair (e.g., ETH/USD):
+
+1.  **Visit Chainlink Documentation:** Go to the official Chainlink documentation website.
+2.  **Navigate to Data Feeds:** Look for the "Data Feeds" or "Price Feeds" section.
+3.  **Select Network and Asset Pair:** Choose your target network (e.g., Monad Testnet) and the specific asset pair (e.g., ETH/USD) to find the corresponding deployed contract address.
+
+**Example:** For Monad Testnet ETH/USD, you would look for an entry like `ETH / USD` under the Monad section.
+
 ### Deployment with a Private Key (Recommended for Quick Testing)
 
 This method uses the `PRIVATE_KEY` environment variable for the target chain.

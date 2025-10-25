@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GameCountdown } from '../components/screens/GameCountdown';
 import { DirectionCard } from '../components/game/DirectionCard';
 import { GameOverScreen } from '../components/screens/GameOverScreen';
 import { HowToPlayScreen } from '../components/screens/HowToPlayScreen';
@@ -15,21 +14,16 @@ import { LiminalBackground } from '../components/ui/LiminalBackground';
 import { OverlayNoise } from '../components/ui/OverlayNoise';
 import { TemporalBackground } from '../components/ui/TemporalBackground';
 import { AudioManager, AudioManagerHandle } from '../systems/AudioManager';
-import { Direction, getRandomDirection } from '../lib/types';
-import { gmrAbi, gmrAddress, leaderboardAbi, leaderboardAddress, resetStrikesAbi, resetStrikesAddress } from '../lib/contracts';
+import { Direction, getRandomDirection, GameState } from '../lib/types';
 import { base } from 'wagmi/chains';
-import { monad } from '../lib/wagmi';
+import { monadTestnet } from '../lib/contracts';
 import { parseEther } from 'viem';
-import sdk, { useMiniAppContext } from '@farcaster/miniapp-sdk';
-import aggregatorV3InterfaceAbi from '../abis/AggregatorV3Interface.json';
-
-type GameState = 'menu' | 'howToPlay' | 'countdown' | 'playing' | 'gameOver' | 'leaderboard';
+import { contracts } from '../lib/contracts';
 
 const INITIAL_STRIKES = 3;
-const GAME_DURATION_MS = 30000;
-const CARD_INITIAL_TIME_MS = 2000; // 2.0 seconds
-const CARD_MIN_TIME_MS = 750;     // 0.75 seconds
-const SCORE_FOR_MAX_DIFFICULTY = 5000; // Score at which card time reaches its minimum
+const CARD_INITIAL_TIME_MS = 2000;
+const CARD_MIN_TIME_MS = 750;
+const SCORE_FOR_MAX_DIFFICULTY = 5000;
 
 const App: React.FC = () => {
     const { address, isConnected, chain } = useAccount();
@@ -40,19 +34,20 @@ const App: React.FC = () => {
     const { data: resetStrikesHash, writeContract: writeResetStrikesContract } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-    const { fid, username, displayName, pfpUrl } = useMiniAppContext();
-    console.log('Farcaster Context:', { fid, username, displayName, pfpUrl });
-
-    const ethUsdPriceFeedAddress = '0x4aDC67696bA383F43DD60A9eA083f33224687279'; // Base ETH/USD
+    const audioManager = useRef<AudioManagerHandle>(null);
 
     const { data: ethPriceData } = useReadContract({
-        address: ethUsdPriceFeedAddress,
-        abi: aggregatorV3InterfaceAbi,
+        address: contracts.base.aggregatorV3.address,
+        abi: contracts.base.aggregatorV3.abi,
         functionName: 'latestRoundData',
         chainId: base.id,
     });
 
-    console.log('ethPriceData', ethPriceData);
+    useEffect(() => {
+        if (ethPriceData) {
+            console.log('ethPriceData', ethPriceData);
+        }
+    }, [ethPriceData]);
 
     const [gameState, setGameState] = useState<GameState>('menu');
     const [score, setScore] = useState(0);
@@ -63,10 +58,13 @@ const App: React.FC = () => {
     const [isJoker, setIsJoker] = useState(false);
     const [cardKey, setCardKey] = useState(0);
     const [shake, setShake] = useState(false);
+    const [flash, setFlash] = useState(false);
     const [sparkle, setSparkle] = useState(false);
     const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
     const [multiplier, setMultiplier] = useState(1);
     const [cardTimerId, setCardTimerId] = useState<NodeJS.Timeout | null>(null);
+    const [entranceState, setEntranceState] = useState<'idle' | 'sentence' | 'dimming' | 'countdown'>('idle');
+    const [entranceCountdown, setEntranceCountdown] = useState(3);
 
     const currentCardTimeLimit = useMemo(() => {
         const progress = Math.min(score / SCORE_FOR_MAX_DIFFICULTY, 1);
@@ -82,14 +80,15 @@ const App: React.FC = () => {
         setCurrentDirection(getRandomDirection());
         setCardKey(prev => prev + 1);
         setKeyboardSwipeOutDirection(null);
+        setGameStartTime(performance.now()); // Set gameStartTime when a new card is generated
         
-        if (gameState === 'playing') { // Only set timer if game is playing
+        if (gameState === 'playing') {
             const timer = setTimeout(() => {
                 handleIncorrectSwipe();
             }, currentCardTimeLimit);
             setCardTimerId(timer);
         }
-    }, [cardTimerId, handleIncorrectSwipe, currentCardTimeLimit, gameState]);
+    }, [cardTimerId, currentCardTimeLimit, gameState]);
 
     const handleCorrectSwipe = useCallback(() => {
         if (cardTimerId) clearTimeout(cardTimerId);
@@ -103,32 +102,29 @@ const App: React.FC = () => {
         if (cardTimerId) clearTimeout(cardTimerId);
         setStrikes(prev => prev - 1);
         setShake(true);
+        if (gameState === 'playing') {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 300);
+        }
         audioManager.current?.playWrongSwipe();
         setTimeout(() => setShake(false), 500);
         handleGenerateNewCard();
-    }, [cardTimerId, handleGenerateNewCard]);
+    }, [cardTimerId, handleGenerateNewCard, gameState]);
 
     const startGame = () => {
-        setGameState('howToPlay');
+        setEntranceState('sentence');
     };
 
     const handleStartGame = () => {
         setScore(0);
         setStrikes(INITIAL_STRIKES);
-        setGameState('countdown');
+        setGameState('playing'); // Directly start playing after entrance sequence
     };
 
     const handleCountdownComplete = () => {
         setGameState('playing');
         setGameStartTime(performance.now());
     };
-
-    const handleTimesUp = useCallback(() => {
-        setGameState('gameOver');
-        if (score > highScore) {
-            setHighScore(score);
-        }
-    }, [score, highScore]);
 
     const handlePlayAgain = () => {
         startGame();
@@ -144,24 +140,26 @@ const App: React.FC = () => {
 
     const handleGm = () => {
         if (!address || !chain) return;
-        const contractAddress = chain.id === monad.id ? gmrAddress[monad.id] : gmrAddress[base.id];
-        if (!contractAddress) {
+        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
+        if (!contractConfig.address) {
             console.error(`No GMR contract address found for chain ID ${chain.id}`);
             return;
         }
 
         writeGmrContract({
-            address: contractAddress,
-            abi: gmrAbi,
-            functionName: 'gm',
-            args: [],
+            address: contractConfig.address,
+            abi: contractConfig.abi,
+            functionName: 'mint',
+            args: [address, parseEther('1')],
+            chain: chain,
+            account: address,
         });
     };
 
     const handleResetStrikes = () => {
         if (!address || !chain) return;
-        const contractAddress = chain.id === monad.id ? resetStrikesAddress[monad.id] : resetStrikesAddress[base.id];
-        if (!contractAddress) {
+        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
+        if (!contractConfig.address) {
             console.error(`No ResetStrikes contract address found for chain ID ${chain.id}`);
             return;
         }
@@ -169,55 +167,92 @@ const App: React.FC = () => {
         let txValue = 0n;
         if (chain.id === base.id && ethPriceData) {
             const [, price, , ,] = ethPriceData as [bigint, bigint, bigint, bigint, bigint];
-            const ethPriceInUsd = Number(price) / 1e8; // The price has 8 decimals
+            const ethPriceInUsd = Number(price) / 1e8;
             const costInUsd = 0.05;
             const costInEth = costInUsd / ethPriceInUsd;
             txValue = parseEther(costInEth.toString());
         }
 
         writeResetStrikesContract({
-            address: contractAddress,
-            abi: resetStrikesAbi,
+            address: contractConfig.address,
+            abi: contractConfig.abi,
             functionName: 'resetStrikes',
             args: [],
             value: txValue,
+            chain: chain,
+            account: address,
         });
     };
 
     const handleSubmitScore = useCallback(() => {
-        if (!address || !chain) return;
-        const contractAddress = chain.id === monad.id ? leaderboardAddress[monad.id] : leaderboardAddress[base.id];
-        if (!contractAddress) {
+        console.log('handleSubmitScore called');
+        if (!address || !chain) {
+            console.log('handleSubmitScore: Missing address or chain', { address, chain });
+            return;
+        }
+        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
+        if (!contractConfig.address) {
             console.error(`No leaderboard contract address found for chain ID ${chain.id}`);
             return;
         }
+        console.log('handleSubmitScore: Submitting score', { score, contractConfig });
 
         writeContract({
-            address: contractAddress,
-            abi: leaderboardAbi,
-            functionName: 'updateScore',
+            address: contractConfig.address,
+            abi: contractConfig.abi,
+            functionName: 'submitScore',
             args: [BigInt(score)],
+            chain: chain,
+            account: address,
         });
     }, [address, chain, score, writeContract]);
 
     useEffect(() => {
         if (strikes <= 0) {
             setGameState('gameOver');
+            console.log('Game Over triggered. GameState:', 'gameOver');
         }
     }, [strikes]);
 
     useEffect(() => {
-        // Clear timer on unmount or when game state is not 'playing'
+        if (gameState === 'gameOver') {
+            setFlash(false);
+        }
+    }, [gameState]);
+
+    useEffect(() => {
+        if (entranceState === 'sentence') {
+            const timer = setTimeout(() => {
+                setEntranceState('dimming');
+            }, 3000); // Display sentence for 3 seconds
+            return () => clearTimeout(timer);
+        } else if (entranceState === 'dimming') {
+            setEntranceCountdown(3);
+            const countdownInterval = setInterval(() => {
+                setEntranceCountdown(prev => {
+                    if (prev - 1 <= 0) {
+                        clearInterval(countdownInterval);
+                        setEntranceState('idle');
+                        setGameState('playing');
+                        setFlash(true); // Trigger neon flash on game start
+                        setTimeout(() => setFlash(false), 300); // Reset flash after 300ms
+                        handleGenerateNewCard(); // Start the game automatically
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            return () => clearInterval(countdownInterval);
+        }
+    }, [entranceState]);
+
+    useEffect(() => {
         return () => {
             if (cardTimerId) {
                 clearTimeout(cardTimerId);
             }
         };
     }, [gameState, cardTimerId]);
-
-    useEffect(() => {
-        sdk.actions.ready();
-    }, []);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -242,11 +277,29 @@ const App: React.FC = () => {
     }, [gameState]);
 
     const renderGameState = () => {
+        if (entranceState === 'sentence') {
+            return (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 z-50 transition-opacity duration-1000">
+                    <p className="text-white text-4xl text-center entrance-sentence-fade-out">
+                        The Length of the Liminal is unknown.
+                        <br />
+                        The End, has never been discovered.
+                    </p>
+                </div>
+            );
+        } else if (entranceState === 'dimming') {
+            return (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 z-50 transition-opacity duration-1000">
+                    <p className="text-white text-8xl font-bold animate-pulse">{entranceCountdown}</p>
+                </div>
+            );
+        }
+
         switch (gameState) {
             case 'howToPlay':
                 return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />;
-           case 'countdown':
-    return <GameCountdown onComplete={handleCountdownComplete} />;
+            case 'countdown':
+                return <GameCountdown onComplete={handleCountdownComplete} />;
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
@@ -331,6 +384,10 @@ const App: React.FC = () => {
         }
     };
 
+    const gameIntensity = useMemo(() => {
+        return Math.min(score / 1000, 1);
+    }, [score]);
+
     return (
         <main className={`w-screen h-screen overflow-hidden ${shake ? 'animate-shake' : ''}`}>
             <LiminalBackground difficulty={1 + gameIntensity * 9} intensity={gameIntensity} />
@@ -340,26 +397,29 @@ const App: React.FC = () => {
             <SparkleController on={sparkle} onComplete={() => setSparkle(false)} />
             <AudioManager ref={audioManager} isMusicMuted={false} isSfxMuted={false} multiplier={gameIntensity} onMilestone={() => {}} stage={gameIntensity * 5} />
 
+            {flash && <div className="absolute inset-0 z-50 animate-flash-neon pointer-events-none"></div>}
+
             <div className="absolute top-0 left-0 right-0 p-4 z-10">
                 <div className="flex justify-between items-center text-white text-2xl font-bold bg-black/20 p-3 rounded-lg border-2 border-white/20 backdrop-blur-sm w-full">
                     <div className="text-shadow-pop">
                         <span className="text-white/70 text-lg font-semibold">SCORE</span>
                         <p data-testid="score">{score}</p>
                     </div>
-                    {gameState === 'playing' && gameStartTime && (
+                    <div className="flex-grow flex justify-center">
                         <CountdownTimer
                             startTime={gameStartTime}
-                            duration={GAME_DURATION_MS}
-                            onTimesUp={handleTimesUp}
+                            duration={currentCardTimeLimit}
+                            onTimesUp={handleIncorrectSwipe}
+                            gameState={gameState}
                         />
-                    )}
+                    </div>
                     <div className="text-shadow-pop text-right">
                         <span className="text-white/70 text-lg font-semibold">MULTIPLIER</span>
                         <p>{multiplier}x</p>
                     </div>
                 </div>
                 <div className="absolute left-1/2 -translate-x-1/2 mt-2">
-                    <StrikesDisplay strikes={strikes} />
+                    {gameState !== 'gameOver' && <StrikesDisplay key={gameState} strikes={strikes} />}
                 </div>
             </div>
 

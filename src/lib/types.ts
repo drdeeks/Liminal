@@ -1,11 +1,4 @@
-export enum GameState {
-  Start,
-  HowToPlay,
-  Countdown,
-  Playing,
-  GameOver,
-  Leaderboard,
-}
+export type GameState = 'start' | 'howToPlay' | 'countdown' | 'playing' | 'gameOver' | 'leaderboard' | 'menu';
 
 export enum Direction {
   Up,

@@ -1,35 +1,23 @@
-import { http, createConfig } from 'wagmi';
-import { base, mainnet } from 'wagmi/chains';
-import { injected } from 'wagmi/connectors';
+import { http, createConfig } from 'wagmi'
+import { base } from 'wagmi/chains'
+import { injected } from 'wagmi/connectors'
+import { monadTestnet, monad } from './contracts'
 
-// Define the Monad chain manually
-export const monad = {
-  id: 10143,
-  name: 'Monad Testnet',
-  nativeCurrency: {
-    name: 'Monad',
-    symbol: 'MONAD',
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: { http: ['https://testnet-rpc.monad.xyz'] },
-  },
-  blockExplorers: {
-    default: { name: 'Monad Explorer', url: 'https://testnet-explorer.monad.xyz' },
-  },
-  testnet: true,
-};
-
-console.log('WAGMI Config Loaded:', { base, mainnet, monad });
+// Re-export for convenience
+export { monadTestnet, monad }
 
 export const config = createConfig({
-  chains: [mainnet, base, monad],
-  connectors: [
-    injected(),
-  ],
+  chains: [base, monadTestnet],
+  connectors: [injected()], // Only injected connector for Farcaster
   transports: {
-    [mainnet.id]: http(),
     [base.id]: http(),
-    [monad.id]: http(),
+    [monadTestnet.id]: http(),
   },
-});
+  ssr: false,
+})
+
+declare module 'wagmi' {
+  interface Register {
+    config: typeof config
+  }
+}

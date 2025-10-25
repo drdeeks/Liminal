@@ -33,7 +33,7 @@ contracts/out/
 contracts/cache/
 
 # Keystore
-/keystore-*.json
+/keystores/
 
 # Test results
 /test-results/
@@ -41,4 +41,5 @@ contracts/cache/
 # Informational Docs (except root README.md)
 *.md
 !README.md
+!contracts/script/README.updated.md
 gemini.md

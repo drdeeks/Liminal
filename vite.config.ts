@@ -1,68 +1,50 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-
-// Debug: Log when config is evaluated
-console.log('[VITE CONFIG] Configuration file loaded at:', new Date().toISOString());
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-
-  server: {
-    port: 3000,
-    host: true,
-    // Increase HMR timeout
-    hmr: {
-      overlay: true,
-      timeout: 30000,
-    },
-    watch: {
-      // Aggressive ignore patterns
-      ignored: [
-        '**/node_modules/**',
-        '**/.git/**',
-        '**/dist/**',
-        '**/build/**',
-        '**/.vite/**',
-        '**/coverage/**',
-        '**/.cache/**',
-        // Add your config files to prevent self-watching
-        '**/vite.config.ts',
-        '**/tsconfig.json',
-        '**/tsconfig.node.json',
-        '**/*.log',
-      ],
-      // Use polling as fallback (less efficient but more reliable)
-      usePolling: false,
-      // Increase debounce interval
-      awaitWriteFinish: {
-        stabilityThreshold: 2000,
-        pollInterval: 100,
-      },
-    },
-  },
-
-  // Prevent config file changes from causing restarts
-  clearScreen: false,
-
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-
-  // Optimize dependencies to prevent re-bundling
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    force: true,
+    include: [
+      '@farcaster/miniapp-sdk',
+      'wagmi',
+      'viem',
+      '@tanstack/react-query',
+      'zustand',
+    ],
+    exclude: [
+      '@base-org/account', // Fix for import assertion error
+    ],
+    esbuildOptions: {
+      target: 'esnext',
+    },
   },
-
-  // Add build options that might help
+  server: {
+    host: true,
+    fs: {
+      strict: false,
+    },
+    hmr: {
+      overlay: false,
+    },
+  },
   build: {
+    target: 'esnext',
+    sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-wagmi': ['wagmi', 'viem', '@tanstack/react-query'],
+          'vendor-farcaster': ['@farcaster/miniapp-sdk'],
+          'vendor-state': ['zustand'],
+        },
       },
     },
   },
-});
+})

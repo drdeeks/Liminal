@@ -10,6 +10,27 @@
   }
 }
 
+@keyframes flash-neon {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(0, 255, 255, 0.7); /* Brighter Cyan neon */ }
+  100% { background-color: transparent; }
+}
+
+.animate-flash-neon {
+  animation: flash-neon 0.3s ease-out;
+}
+
+.entrance-sentence-fade-out {
+  animation: fadeInOut 3s forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 body {
   margin: 0;
   padding: 0;
