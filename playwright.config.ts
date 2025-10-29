@@ -4,11 +4,11 @@ export default defineConfig({
   testDir: './tests',
   webServer: {
     command: 'npm run dev',
-    port: 3000,
+    port: 5173,
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI,
   },
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:5173',
   },
 });
