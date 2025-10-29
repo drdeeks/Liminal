@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSwitchChain } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DirectionCard } from '../components/game/DirectionCard';
 import { GameOverScreen } from '../components/screens/GameOverScreen';
@@ -29,6 +29,7 @@ const App: React.FC = () => {
     const { address, isConnected, chain } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
+    const { switchChain } = useSwitchChain();
     const { data: hash, error: writeError, isPending, writeContract } = useWriteContract();
     const { data: gmrHash, writeContract: writeGmrContract } = useWriteContract();
     const { data: resetStrikesHash, writeContract: writeResetStrikesContract } = useWriteContract();
@@ -65,6 +66,14 @@ const App: React.FC = () => {
     const [cardTimerId, setCardTimerId] = useState<NodeJS.Timeout | null>(null);
     const [entranceState, setEntranceState] = useState<'idle' | 'sentence' | 'dimming' | 'countdown'>('idle');
     const [entranceCountdown, setEntranceCountdown] = useState(3);
+    const [showConnectors, setShowConnectors] = useState(false);
+    const [activeChain, setActiveChain] = useState(chain);
+
+    useEffect(() => {
+        if (chain) {
+            setActiveChain(chain);
+        }
+    }, [chain]);
 
     const currentCardTimeLimit = useMemo(() => {
         const progress = Math.min(score / SCORE_FOR_MAX_DIFFICULTY, 1);
@@ -139,8 +148,8 @@ const App: React.FC = () => {
     };
 
     const handleGm = () => {
-        if (!address || !chain) return;
-        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
+        if (!address || !activeChain) return;
+        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
         if (!contractConfig.address) {
             console.error(`No GMR contract address found for chain ID ${chain.id}`);
             return;
@@ -151,14 +160,14 @@ const App: React.FC = () => {
             abi: contractConfig.abi,
             functionName: 'mint',
             args: [address, parseEther('1')],
-            chain: chain,
+            chain: activeChain,
             account: address,
         });
     };
 
     const handleResetStrikes = () => {
-        if (!address || !chain) return;
-        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
+        if (!address || !activeChain) return;
+        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
         if (!contractConfig.address) {
             console.error(`No ResetStrikes contract address found for chain ID ${chain.id}`);
             return;
@@ -179,18 +188,18 @@ const App: React.FC = () => {
             functionName: 'resetStrikes',
             args: [],
             value: txValue,
-            chain: chain,
+            chain: activeChain,
             account: address,
         });
     };
 
     const handleSubmitScore = useCallback(() => {
         console.log('handleSubmitScore called');
-        if (!address || !chain) {
-            console.log('handleSubmitScore: Missing address or chain', { address, chain });
+        if (!address || !activeChain) {
+            console.log('handleSubmitScore: Missing address or chain', { address, chain: activeChain });
             return;
         }
-        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
+        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
         if (!contractConfig.address) {
             console.error(`No leaderboard contract address found for chain ID ${chain.id}`);
             return;
@@ -202,10 +211,10 @@ const App: React.FC = () => {
             abi: contractConfig.abi,
             functionName: 'submitScore',
             args: [BigInt(score)],
-            chain: chain,
+            chain: activeChain,
             account: address,
         });
-    }, [address, chain, score, writeContract]);
+    }, [address, activeChain, score, writeContract]);
 
     useEffect(() => {
         if (strikes <= 0) {
@@ -298,8 +307,6 @@ const App: React.FC = () => {
         switch (gameState) {
             case 'howToPlay':
                 return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />;
-            case 'countdown':
-                return <GameCountdown onComplete={handleCountdownComplete} />;
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
@@ -365,18 +372,56 @@ const App: React.FC = () => {
                                 >
                                     Say GM
                                 </button>
+                                <div className="mt-4">
+                                    <label htmlFor="chain-select" className="text-white mr-2">Chain:</label>
+                                    <select
+                                        id="chain-select"
+                                        value={activeChain?.id || ''}
+                                        onChange={(e) => {
+                                            const newChainId = parseInt(e.target.value);
+                                            switchChain({ chainId: newChainId });
+                                        }}
+                                        className="bg-gray-800 text-white rounded-lg p-2"
+                                    >
+                                        <option value={base.id}>Base</option>
+                                        <option value={monadTestnet.id}>Monad</option>
+                                    </select>
+                                </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col space-y-2">
-                                {connectors.map((connector) => (
-                                    <button
-                                        key={connector.uid}
-                                        className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
-                                        onClick={() => connect({ connector })}
-                                    >
-                                        Connect Wallet
-                                    </button>
-                                ))}
+                            <div className="relative">
+                                <button
+                                    className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
+                                    onClick={() => setShowConnectors(prev => !prev)}
+                                >
+                                    Connect Wallet
+                                </button>
+                                <AnimatePresence>
+                                    {showConnectors && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 10 }}
+                                            className="absolute bottom-full mb-2 w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-white/20"
+                                        >
+                                            <ul className="text-white text-center">
+                                                {connectors.map((connector) => (
+                                                    <li key={connector.uid}>
+                                                        <button
+                                                            className="w-full px-4 py-3 text-xl hover:bg-gray-700/50 transition-colors"
+                                                            onClick={() => {
+                                                                connect({ connector });
+                                                                setShowConnectors(false);
+                                                            }}
+                                                        >
+                                                            {connector.name}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         )}
                     </div>
