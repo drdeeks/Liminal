@@ -299,8 +299,6 @@ const App: React.FC = () => {
         switch (gameState) {
             case 'howToPlay':
                 return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />;
-            case 'countdown':
-                return <GameCountdown onComplete={handleCountdownComplete} />;
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
