@@ -65,6 +65,7 @@ const App: React.FC = () => {
     const [cardTimerId, setCardTimerId] = useState<NodeJS.Timeout | null>(null);
     const [entranceState, setEntranceState] = useState<'idle' | 'sentence' | 'dimming' | 'countdown'>('idle');
     const [entranceCountdown, setEntranceCountdown] = useState(3);
+    const [showConnectors, setShowConnectors] = useState(false);
 
     const currentCardTimeLimit = useMemo(() => {
         const progress = Math.min(score / SCORE_FOR_MAX_DIFFICULTY, 1);
@@ -367,16 +368,39 @@ const App: React.FC = () => {
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex flex-col space-y-2">
-                                {connectors.map((connector) => (
-                                    <button
-                                        key={connector.uid}
-                                        className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
-                                        onClick={() => connect({ connector })}
-                                    >
-                                        Connect Wallet
-                                    </button>
-                                ))}
+                            <div className="relative">
+                                <button
+                                    className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
+                                    onClick={() => setShowConnectors(prev => !prev)}
+                                >
+                                    Connect Wallet
+                                </button>
+                                <AnimatePresence>
+                                    {showConnectors && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 10 }}
+                                            className="absolute bottom-full mb-2 w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-white/20"
+                                        >
+                                            <ul className="text-white text-center">
+                                                {connectors.map((connector) => (
+                                                    <li key={connector.uid}>
+                                                        <button
+                                                            className="w-full px-4 py-3 text-xl hover:bg-gray-700/50 transition-colors"
+                                                            onClick={() => {
+                                                                connect({ connector });
+                                                                setShowConnectors(false);
+                                                            }}
+                                                        >
+                                                            {connector.name}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         )}
                     </div>
