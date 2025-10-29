@@ -37,10 +37,10 @@ const App: React.FC = () => {
     const audioManager = useRef<AudioManagerHandle>(null);
 
     const { data: ethPriceData } = useReadContract({
-        address: contracts.base.aggregatorV3.address,
-        abi: contracts.base.aggregatorV3.abi,
+        address: chain?.id === monadTestnet.id ? contracts.monad.aggregatorV3.address : contracts.base.aggregatorV3.address,
+        abi: chain?.id === monadTestnet.id ? contracts.monad.aggregatorV3.abi : contracts.base.aggregatorV3.abi,
         functionName: 'latestRoundData',
-        chainId: base.id,
+        chainId: chain?.id,
     });
 
     useEffect(() => {
@@ -48,6 +48,13 @@ const App: React.FC = () => {
             console.log('ethPriceData', ethPriceData);
         }
     }, [ethPriceData]);
+
+    useEffect(() => {
+        const storedHighScore = localStorage.getItem('gmr-high-score');
+        if (storedHighScore) {
+            setHighScore(parseInt(storedHighScore, 10));
+        }
+    }, []);
 
     const [gameState, setGameState] = useState<GameState>('menu');
     const [score, setScore] = useState(0);
@@ -62,6 +69,7 @@ const App: React.FC = () => {
     const [sparkle, setSparkle] = useState(false);
     const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
     const [multiplier, setMultiplier] = useState(1);
+    const [consecutiveCorrectSwipes, setConsecutiveCorrectSwipes] = useState(0);
     const [cardTimerId, setCardTimerId] = useState<NodeJS.Timeout | null>(null);
     const [entranceState, setEntranceState] = useState<'idle' | 'sentence' | 'dimming' | 'countdown'>('idle');
     const [entranceCountdown, setEntranceCountdown] = useState(3);
@@ -92,24 +100,37 @@ const App: React.FC = () => {
 
     const handleCorrectSwipe = useCallback(() => {
         if (cardTimerId) clearTimeout(cardTimerId);
-        setScore(prev => prev + 1);
+        setScore(prev => prev + multiplier);
         setSparkle(true);
+        const newConsecutive = consecutiveCorrectSwipes + 1;
+        setConsecutiveCorrectSwipes(newConsecutive);
+        if (newConsecutive % 5 === 0) {
+            setMultiplier(prev => prev + 1);
+        }
         audioManager.current?.playCorrectSwipe();
         handleGenerateNewCard();
-    }, [cardTimerId, handleGenerateNewCard]);
+    }, [cardTimerId, handleGenerateNewCard, multiplier, consecutiveCorrectSwipes]);
 
     const handleIncorrectSwipe = useCallback(() => {
         if (cardTimerId) clearTimeout(cardTimerId);
-        setStrikes(prev => prev - 1);
+        const newStrikes = strikes - 1;
+        setStrikes(newStrikes);
         setShake(true);
-        if (gameState === 'playing') {
-            setFlash(true);
-            setTimeout(() => setFlash(false), 300);
+        setMultiplier(1);
+        setConsecutiveCorrectSwipes(0);
+
+        if (newStrikes <= 0) {
+            setGameState('gameOver');
+        } else {
+            if (gameState === 'playing') {
+                setFlash(true);
+                setTimeout(() => setFlash(false), 300);
+            }
+            audioManager.current?.playWrongSwipe();
+            setTimeout(() => setShake(false), 500);
+            handleGenerateNewCard();
         }
-        audioManager.current?.playWrongSwipe();
-        setTimeout(() => setShake(false), 500);
-        handleGenerateNewCard();
-    }, [cardTimerId, handleGenerateNewCard, gameState]);
+    }, [cardTimerId, handleGenerateNewCard, gameState, strikes]);
 
     const startGame = () => {
         setEntranceState('sentence');
@@ -210,15 +231,28 @@ const App: React.FC = () => {
     useEffect(() => {
         if (strikes <= 0) {
             setGameState('gameOver');
+            if (score > highScore) {
+                setHighScore(score);
+                localStorage.setItem('gmr-high-score', score.toString());
+            }
             console.log('Game Over triggered. GameState:', 'gameOver');
         }
-    }, [strikes]);
+    }, [strikes, score, highScore]);
 
     useEffect(() => {
         if (gameState === 'gameOver') {
             setFlash(false);
         }
     }, [gameState]);
+
+    useEffect(() => {
+        if (flash) {
+            const timer = setTimeout(() => {
+                setFlash(false);
+            }, 300); // Same duration as the animation
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     useEffect(() => {
         if (entranceState === 'sentence') {
@@ -298,8 +332,6 @@ const App: React.FC = () => {
         switch (gameState) {
             case 'howToPlay':
                 return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />;
-            case 'countdown':
-                return <GameCountdown onComplete={handleCountdownComplete} />;
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
