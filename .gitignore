@@ -40,6 +40,8 @@ contracts/cache/
 
 # Informational Docs (except root README.md)
 *.md
-!README.md
-!contracts/script/README.updated.md
-gemini.md
+!/README.md
+!/contracts/script/README.updated.md
+
+# Development
+jules-scratch/
