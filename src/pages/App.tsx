@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSwitchChain } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DirectionCard } from '../components/game/DirectionCard';
 import { GameOverScreen } from '../components/screens/GameOverScreen';
@@ -29,6 +29,7 @@ const App: React.FC = () => {
     const { address, isConnected, chain } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
+    const { switchChain } = useSwitchChain();
     const { data: hash, error: writeError, isPending, writeContract } = useWriteContract();
     const { data: gmrHash, writeContract: writeGmrContract } = useWriteContract();
     const { data: resetStrikesHash, writeContract: writeResetStrikesContract } = useWriteContract();
@@ -37,10 +38,10 @@ const App: React.FC = () => {
     const audioManager = useRef<AudioManagerHandle>(null);
 
     const { data: ethPriceData } = useReadContract({
-        address: chain?.id === monadTestnet.id ? contracts.monad.aggregatorV3.address : contracts.base.aggregatorV3.address,
-        abi: chain?.id === monadTestnet.id ? contracts.monad.aggregatorV3.abi : contracts.base.aggregatorV3.abi,
+        address: contracts.base.aggregatorV3.address,
+        abi: contracts.base.aggregatorV3.abi,
         functionName: 'latestRoundData',
-        chainId: chain?.id,
+        chainId: base.id,
     });
 
     useEffect(() => {
@@ -48,13 +49,6 @@ const App: React.FC = () => {
             console.log('ethPriceData', ethPriceData);
         }
     }, [ethPriceData]);
-
-    useEffect(() => {
-        const storedHighScore = localStorage.getItem('gmr-high-score');
-        if (storedHighScore) {
-            setHighScore(parseInt(storedHighScore, 10));
-        }
-    }, []);
 
     const [gameState, setGameState] = useState<GameState>('menu');
     const [score, setScore] = useState(0);
@@ -69,11 +63,17 @@ const App: React.FC = () => {
     const [sparkle, setSparkle] = useState(false);
     const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
     const [multiplier, setMultiplier] = useState(1);
-    const [consecutiveCorrectSwipes, setConsecutiveCorrectSwipes] = useState(0);
     const [cardTimerId, setCardTimerId] = useState<NodeJS.Timeout | null>(null);
     const [entranceState, setEntranceState] = useState<'idle' | 'sentence' | 'dimming' | 'countdown'>('idle');
     const [entranceCountdown, setEntranceCountdown] = useState(3);
     const [showConnectors, setShowConnectors] = useState(false);
+    const [activeChain, setActiveChain] = useState(chain);
+
+    useEffect(() => {
+        if (chain) {
+            setActiveChain(chain);
+        }
+    }, [chain]);
 
     const currentCardTimeLimit = useMemo(() => {
         const progress = Math.min(score / SCORE_FOR_MAX_DIFFICULTY, 1);
@@ -101,37 +101,24 @@ const App: React.FC = () => {
 
     const handleCorrectSwipe = useCallback(() => {
         if (cardTimerId) clearTimeout(cardTimerId);
-        setScore(prev => prev + multiplier);
+        setScore(prev => prev + 1);
         setSparkle(true);
-        const newConsecutive = consecutiveCorrectSwipes + 1;
-        setConsecutiveCorrectSwipes(newConsecutive);
-        if (newConsecutive % 5 === 0) {
-            setMultiplier(prev => prev + 1);
-        }
         audioManager.current?.playCorrectSwipe();
         handleGenerateNewCard();
-    }, [cardTimerId, handleGenerateNewCard, multiplier, consecutiveCorrectSwipes]);
+    }, [cardTimerId, handleGenerateNewCard]);
 
     const handleIncorrectSwipe = useCallback(() => {
         if (cardTimerId) clearTimeout(cardTimerId);
-        const newStrikes = strikes - 1;
-        setStrikes(newStrikes);
+        setStrikes(prev => prev - 1);
         setShake(true);
-        setMultiplier(1);
-        setConsecutiveCorrectSwipes(0);
-
-        if (newStrikes <= 0) {
-            setGameState('gameOver');
-        } else {
-            if (gameState === 'playing') {
-                setFlash(true);
-                setTimeout(() => setFlash(false), 300);
-            }
-            audioManager.current?.playWrongSwipe();
-            setTimeout(() => setShake(false), 500);
-            handleGenerateNewCard();
+        if (gameState === 'playing') {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 300);
         }
-    }, [cardTimerId, handleGenerateNewCard, gameState, strikes]);
+        audioManager.current?.playWrongSwipe();
+        setTimeout(() => setShake(false), 500);
+        handleGenerateNewCard();
+    }, [cardTimerId, handleGenerateNewCard, gameState]);
 
     const startGame = () => {
         setEntranceState('sentence');
@@ -161,8 +148,8 @@ const App: React.FC = () => {
     };
 
     const handleGm = () => {
-        if (!address || !chain) return;
-        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
+        if (!address || !activeChain) return;
+        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
         if (!contractConfig.address) {
             console.error(`No GMR contract address found for chain ID ${chain.id}`);
             return;
@@ -173,14 +160,14 @@ const App: React.FC = () => {
             abi: contractConfig.abi,
             functionName: 'mint',
             args: [address, parseEther('1')],
-            chain: chain,
+            chain: activeChain,
             account: address,
         });
     };
 
     const handleResetStrikes = () => {
-        if (!address || !chain) return;
-        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
+        if (!address || !activeChain) return;
+        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
         if (!contractConfig.address) {
             console.error(`No ResetStrikes contract address found for chain ID ${chain.id}`);
             return;
@@ -201,18 +188,18 @@ const App: React.FC = () => {
             functionName: 'resetStrikes',
             args: [],
             value: txValue,
-            chain: chain,
+            chain: activeChain,
             account: address,
         });
     };
 
     const handleSubmitScore = useCallback(() => {
         console.log('handleSubmitScore called');
-        if (!address || !chain) {
-            console.log('handleSubmitScore: Missing address or chain', { address, chain });
+        if (!address || !activeChain) {
+            console.log('handleSubmitScore: Missing address or chain', { address, chain: activeChain });
             return;
         }
-        const contractConfig = chain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
+        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
         if (!contractConfig.address) {
             console.error(`No leaderboard contract address found for chain ID ${chain.id}`);
             return;
@@ -224,36 +211,23 @@ const App: React.FC = () => {
             abi: contractConfig.abi,
             functionName: 'submitScore',
             args: [BigInt(score)],
-            chain: chain,
+            chain: activeChain,
             account: address,
         });
-    }, [address, chain, score, writeContract]);
+    }, [address, activeChain, score, writeContract]);
 
     useEffect(() => {
         if (strikes <= 0) {
             setGameState('gameOver');
-            if (score > highScore) {
-                setHighScore(score);
-                localStorage.setItem('gmr-high-score', score.toString());
-            }
             console.log('Game Over triggered. GameState:', 'gameOver');
         }
-    }, [strikes, score, highScore]);
+    }, [strikes]);
 
     useEffect(() => {
         if (gameState === 'gameOver') {
             setFlash(false);
         }
     }, [gameState]);
-
-    useEffect(() => {
-        if (flash) {
-            const timer = setTimeout(() => {
-                setFlash(false);
-            }, 300); // Same duration as the animation
-            return () => clearTimeout(timer);
-        }
-    }, [flash]);
 
     useEffect(() => {
         if (entranceState === 'sentence') {
@@ -398,6 +372,21 @@ const App: React.FC = () => {
                                 >
                                     Say GM
                                 </button>
+                                <div className="mt-4">
+                                    <label htmlFor="chain-select" className="text-white mr-2">Chain:</label>
+                                    <select
+                                        id="chain-select"
+                                        value={activeChain?.id || ''}
+                                        onChange={(e) => {
+                                            const newChainId = parseInt(e.target.value) as typeof base.id | typeof monadTestnet.id;
+                                            switchChain({ chainId: newChainId });
+                                        }}
+                                        className="bg-gray-800 text-white rounded-lg p-2"
+                                    >
+                                        <option value={base.id}>Base</option>
+                                        <option value={monadTestnet.id}>Monad</option>
+                                    </select>
+                                </div>
                             </div>
                         ) : (
                             <div className="relative">
