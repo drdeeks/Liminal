@@ -172,7 +172,7 @@ const App: React.FC = () => {
             abi: contractConfig.abi,
             functionName: 'mint',
             args: [address, parseEther('1')],
-            chainId: chain.id,
+            chain: chain,
             account: address,
         });
     };
@@ -200,7 +200,7 @@ const App: React.FC = () => {
             functionName: 'resetStrikes',
             args: [],
             value: txValue,
-            chainId: chain.id,
+            chain: chain,
             account: address,
         });
     };
@@ -223,7 +223,7 @@ const App: React.FC = () => {
             abi: contractConfig.abi,
             functionName: 'submitScore',
             args: [BigInt(score)],
-            chainId: chain.id,
+            chain: chain,
             account: address,
         });
     }, [address, chain, score, writeContract]);
