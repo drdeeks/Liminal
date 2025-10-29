@@ -378,7 +378,7 @@ const App: React.FC = () => {
                                         id="chain-select"
                                         value={activeChain?.id || ''}
                                         onChange={(e) => {
-                                            const newChainId = parseInt(e.target.value);
+                                            const newChainId = parseInt(e.target.value) as typeof base.id | typeof monadTestnet.id;
                                             switchChain({ chainId: newChainId });
                                         }}
                                         className="bg-gray-800 text-white rounded-lg p-2"
