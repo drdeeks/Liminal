@@ -69,7 +69,7 @@ const App: React.FC = () => {
         }
     }, [ethPriceData]);
 
-    const [gameState, setGameState] = useState<GameState>('howToPlay');
+    const [gameState, setGameState] = useState<GameState>('menu');
     const [score, setScore] = useState(0);
     const [strikes, setStrikes] = useState(INITIAL_STRIKES);
     const [highScore, setHighScore] = useState(0);
@@ -326,47 +326,7 @@ const App: React.FC = () => {
 
         switch (gameState) {
             case 'howToPlay':
-                return isConnected ? (
-                    <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full">
-                        <h1 className="text-6xl font-bold text-white mb-8 title-shadow">Liminal</h1>
-                        <div className="relative">
-                            <button
-                                className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
-                                onClick={() => setShowConnectors(prev => !prev)}
-                            >
-                                Connect Wallet
-                            </button>
-                            <AnimatePresence>
-                                {showConnectors && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        className="absolute bottom-full mb-2 w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-white/20"
-                                    >
-                                        <ul className="text-white text-center">
-                                            {connectors.map((connector) => (
-                                                <li key={connector.uid}>
-                                                    <button
-                                                        className="w-full px-4 py-3 text-xl hover:bg-gray-700/50 transition-colors"
-                                                        onClick={() => {
-                                                            connect({ connector });
-                                                            setShowConnectors(false);
-                                                        }}
-                                                    >
-                                                        {connector.name}
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-                );
+                return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} onViewLeaderboard={handleViewLeaderboard} />;
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
@@ -413,28 +373,28 @@ const App: React.FC = () => {
                         <h1 className="text-6xl font-bold text-white mb-8 title-shadow">Liminal</h1>
                         {isConnected ? (
                             <div className="flex flex-col items-center">
-                                <p className="text-white text-lg mb-4">Welcome, {address?.slice(0, 6)}...{address?.slice(-4)}</p>
                                 <button
                                     className="px-8 py-4 bg-green-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105"
                                     onClick={startGame}
                                 >
                                     Start Game
                                 </button>
-                                                    <button
-                                                        className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
-                                                        onClick={handleViewLeaderboard}
-                                                    >
-                                                        Leaderboard
-                                                    </button>
-                                                    <button
-                                                        className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
-                                                        onClick={handleGm}
-                                                    >
-                                                        Say GM
-                                                    </button>
-                                                    <div className="mt-4">
-                                                        <ChainSelector activeChain={activeChain} switchChain={switchChain} />
-                                                    </div>                            </div>
+                                <button
+                                    className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                    onClick={handleViewLeaderboard}
+                                >
+                                    Leaderboard
+                                </button>
+                                <button
+                                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
+                                    onClick={handleGm}
+                                >
+                                    Say GM
+                                </button>
+                                <div className="mt-4">
+                                    <ChainSelector activeChain={activeChain} switchChain={switchChain} />
+                                </div>
+                            </div>
                         ) : (
                             <div className="relative">
                                 <button
