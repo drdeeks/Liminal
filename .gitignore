@@ -49,3 +49,4 @@ jules-scratch/
 before-assertion.png
 foundry.lock
 package-lock.json.bak
+playwright.config.ts

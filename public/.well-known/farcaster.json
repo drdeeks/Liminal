@@ -6,21 +6,21 @@
   },
   "frame": {
     "name": "Liminal",
-    "iconUrl": "/liminal-assets/icon.png",
+    "iconUrl": "/icon.png",
     "homeUrl": "https://liminal.game",
     "imageUrl": "https://liminal.game/og-image.png",
     "buttonTitle": "Start Playing",
-    "splashImageUrl": "/liminal-assets/splash.png",
+    "splashImageUrl": "/splash.png",
     "splashBackgroundColor": "#000000"
   },
   "miniapp": {
     "version": "1",
     "name": "Liminal",
-    "iconUrl": "/liminal-assets/icon.png",
+    "iconUrl": "/icon.png",
     "homeUrl": "https://liminal.game",
     "imageUrl": "https://liminal.game/og-image.png",
     "buttonTitle": "Start Playing",
-    "splashImageUrl": "/liminal-assets/splash.png",
+    "splashImageUrl": "/splash.png",
     "splashBackgroundColor": "#000000"
   }
 }
