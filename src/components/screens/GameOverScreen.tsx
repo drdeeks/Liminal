@@ -9,12 +9,13 @@ interface GameOverScreenProps {
   onViewLeaderboard: () => void;
   onSubmitScore: () => void;
   isSubmitting: boolean;
-  isSuccess: boolean;
+  isSuccess: boolean; // Keep for now, but will be replaced by isScoreSubmitted
   error: Error | null;
   onResetStrikes: () => void;
+  isScoreSubmitted: boolean;
 }
 
-export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, highScore, onPlayAgain, onViewLeaderboard, onSubmitScore, isSubmitting, isSuccess, error, onResetStrikes }) => {
+export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, highScore, onPlayAgain, onViewLeaderboard, onSubmitScore, isSubmitting, isSuccess, error, onResetStrikes, isScoreSubmitted }) => {
   return (
     <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in-scale">
       <h1 className="text-6xl font-black mb-2 text-glitter">GAME OVER</h1>
@@ -29,10 +30,10 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, highScore
         </button>
         <button
           onClick={onSubmitScore}
-          disabled={isSubmitting || isSuccess}
+          disabled={isSubmitting || isScoreSubmitted}
           className="bg-green-600/50 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg hover:bg-green-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-green-600/50"
         >
-          {isSubmitting ? 'Submitting...' : isSuccess ? 'Score Submitted!' : 'Submit Score'}
+          {isSubmitting ? 'Submitting...' : isScoreSubmitted ? 'Submitted!' : 'Submit Score'}
         </button>
         <button
             onClick={onViewLeaderboard}
@@ -40,14 +41,12 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ score, highScore
         >
             Leaderboard
         </button>
-        {score === 0 && (
         <button
             onClick={onResetStrikes}
             className="bg-purple-600/50 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg hover:bg-purple-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
         >
             Reset Strikes
         </button>
-        )}
       </div>
     </div>
   );

@@ -88,6 +88,13 @@ const App: React.FC = () => {
     const [showConnectors, setShowConnectors] = useState(false);
     const [activeChain, setActiveChain] = useState(chain);
     const [introMessage, setIntroMessage] = useState('');
+    const [isScoreSubmitted, setIsScoreSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (isConfirmed) {
+            setIsScoreSubmitted(true);
+        }
+    }, [isConfirmed]);
 
     useEffect(() => {
         if (chain) {
@@ -363,6 +370,7 @@ const App: React.FC = () => {
                     isSuccess={isConfirmed}
                     error={writeError}
                     onResetStrikes={handleResetStrikes}
+                    isScoreSubmitted={isScoreSubmitted}
                 />;
             case 'leaderboard':
                 return <LeaderboardScreen onBack={handleBackToMenu} />;
@@ -429,6 +437,18 @@ const App: React.FC = () => {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+                                <button
+                                    className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                    onClick={handleViewLeaderboard}
+                                >
+                                    Leaderboard
+                                </button>
+                                <button
+                                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
+                                    onClick={handleGm}
+                                >
+                                    Say GM
+                                </button>
                             </div>
                         )}
                     </div>
