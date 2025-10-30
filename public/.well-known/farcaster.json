@@ -5,8 +5,8 @@
     "signature": "eHlLSrwpuTAVWWRlGq2S/8qcSmOu/3BDuj2pW3RtHSBSidFINyQSKPp5ybuVPbFMXUdIY0z4Qz2LIufWP68dExs="
   },
   "miniapp": {
-    "name": "Liminal",
     "version": "1",
+    "name": "Liminal",
     "iconUrl": "https://liminal-eta.vercel.app/icon.png",
     "homeUrl": "https://liminal-eta.vercel.app",
     "imageUrl": "https://liminal-eta.vercel.app/image.png",
