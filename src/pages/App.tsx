@@ -336,7 +336,7 @@ const App: React.FC = () => {
                 return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} onViewLeaderboard={handleViewLeaderboard} />;
             case 'playing':
                 return (
-                    <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
+                    <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden bg-black/50 backdrop-blur-sm p-4 rounded-lg max-w-md mx-auto my-auto">
                         <AnimatePresence>
                             <motion.div
                                 key={cardKey}
@@ -382,31 +382,31 @@ const App: React.FC = () => {
                         {isConnected ? (
                             <div className="flex flex-col items-center">
                                 <button
-                                    className="px-8 py-4 bg-green-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105"
+                                    className="w-64 px-8 py-4 bg-green-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105 mb-4"
                                     onClick={startGame}
                                 >
                                     Start Game
                                 </button>
                                 <button
-                                    className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
                                 >
                                     Leaderboard
                                 </button>
                                 <button
-                                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
+                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleGm}
                                 >
                                     Say GM
                                 </button>
-                                <div className="mt-4">
+                                <div className="mt-8">
                                     <ChainSelector activeChain={activeChain} switchChain={switchChain} />
                                 </div>
                             </div>
                         ) : (
-                            <div className="relative">
+                            <div className="relative flex flex-col items-center">
                                 <button
-                                    className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
+                                    className="w-64 px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105 mb-4"
                                     onClick={() => setShowConnectors(prev => !prev)}
                                 >
                                     Connect Wallet
@@ -438,13 +438,13 @@ const App: React.FC = () => {
                                     )}
                                 </AnimatePresence>
                                 <button
-                                    className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
                                 >
                                     Leaderboard
                                 </button>
                                 <button
-                                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
+                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleGm}
                                 >
                                     Say GM
