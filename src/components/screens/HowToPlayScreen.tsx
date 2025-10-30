@@ -3,9 +3,10 @@ import React from 'react';
 interface HowToPlayScreenProps {
   onStart: () => void;
   onCancel: () => void;
+  onViewLeaderboard: () => void;
 }
 
-export const HowToPlayScreen: React.FC<HowToPlayScreenProps> = ({ onStart, onCancel }) => {
+export const HowToPlayScreen: React.FC<HowToPlayScreenProps> = ({ onStart, onCancel, onViewLeaderboard }) => {
   return (
     <div className="flex items-center justify-center h-full">
       <div className="bg-gray-900 border-2 border-white/20 text-white p-8 rounded-2xl max-w-lg text-center shadow-lg">
@@ -25,6 +26,12 @@ export const HowToPlayScreen: React.FC<HowToPlayScreenProps> = ({ onStart, onCan
             className="bg-green-600/50 text-white font-bold py-3 px-8 rounded-lg text-2xl shadow-lg hover:bg-green-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm"
           >
             Start Game
+          </button>
+          <button
+            onClick={onViewLeaderboard}
+            className="bg-blue-600/50 text-white font-bold py-3 px-8 rounded-lg text-2xl shadow-lg hover:bg-blue-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm"
+          >
+            Leaderboard
           </button>
           <button
             onClick={onCancel}

@@ -327,7 +327,7 @@ const App: React.FC = () => {
         switch (gameState) {
             case 'howToPlay':
                 return isConnected ? (
-                    <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />
+                    <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} onViewLeaderboard={handleViewLeaderboard} />
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full">
                         <h1 className="text-6xl font-bold text-white mb-8 title-shadow">Liminal</h1>
@@ -365,6 +365,12 @@ const App: React.FC = () => {
                                 )}
                             </AnimatePresence>
                         </div>
+                        <button
+                            className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                            onClick={handleViewLeaderboard}
+                        >
+                            Leaderboard
+                        </button>
                     </div>
                 );
             case 'playing':
@@ -518,8 +524,8 @@ const App: React.FC = () => {
                                             </div>
                                         ) : (
                                             <div className="flex flex-col items-end">
-                                                <span className="text-white/70 text-lg font-semibold">MULTIPLIER</span>
-                                                <p>{multiplier}x</p>
+                                                <span className="text-white/70 text-lg font-semibold">Not Connected</span>
+                                                <p className="text-white/50 text-sm">Wallet</p>
                                             </div>
                                         )}
                                     </div>                </div>
