@@ -57,6 +57,7 @@ Create a `.env` file in the root of the project and add the following variables.
 # RPC URLs for your networks
 MONAD_RPC_URL="YOUR_MONAD_RPC_URL"
 BASE_RPC_URL="YOUR_BASE_RPC_URL"
+VITE_MONAD_RPC_URL="YOUR_MONAD_RPC_URL" # Used by the frontend
 
 # Private Keys (for testing, use keystore for production)
 # If using keystore, these are not needed.
@@ -81,6 +82,7 @@ BASE_CHAIN_ID="84532"  # Example Base Sepolia Chain ID
 - **OWNER_ADDRESS:** This address will receive ownership of the deployed contracts, allowing you to manage them.
 - **ETHERSCAN_API_KEY:** These keys are used by Foundry for contract verification on block explorers. Obtain them from the respective block explorer websites (e.g., Monad Explorer, Basescan).
 - **Chain IDs:** Ensure these match the actual chain IDs of the networks you are deploying to.
+- **Frontend Contract Addresses (VITE_...):** These environment variables are automatically updated by the `scripts/update-config.js` script after successful contract deployment. You do not need to manually set them in your `.env` file.
 
 ### 4. Run the Application
 
