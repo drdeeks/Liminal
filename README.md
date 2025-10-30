@@ -60,12 +60,13 @@ BASE_RPC_URL="YOUR_BASE_RPC_URL"
 VITE_MONAD_RPC_URL="YOUR_MONAD_RPC_URL" # Used by the frontend
 
 # Private Keys (for testing, use keystore for production)
-# If using keystore, these are not needed.
+# If using keystore, these are not needed. If not using keystore, provide them.
 MONAD_PRIVATE_KEY="YOUR_MONAD_PRIVATE_KEY"
 BASE_PRIVATE_KEY="YOUR_BASE_PRIVATE_KEY"
 
-# Owner address for deployed contracts
+# Owner address for deployed contracts and sender for Foundry scripts
 OWNER_ADDRESS="THE_ADDRESS_THAT_WILL_OWN_THE_CONTRACTS"
+SENDER_ADDRESS="THE_ADDRESS_THAT_WILL_SEND_TRANSACTIONS_FOR_DEPLOYMENT"
 
 # Etherscan-compatible API Keys for contract verification
 MONAD_ETHERSCAN_API_KEY="YOUR_MONAD_ETHERSCAN_API_KEY"
@@ -79,7 +80,7 @@ BASE_CHAIN_ID="84532"  # Example Base Sepolia Chain ID
 **Important Notes on Environment Variables:**
 - **RPC URLs:** Obtain these from your chosen RPC provider for Monad and Base.
 - **Private Keys:** For production deployments, it is highly recommended to use a **keystore** for enhanced security. See "Smart Contract Deployment" for details.
-- **OWNER_ADDRESS:** This address will receive ownership of the deployed contracts, allowing you to manage them.
+- **OWNER_ADDRESS & SENDER_ADDRESS:** `OWNER_ADDRESS` will receive ownership of the deployed contracts. `SENDER_ADDRESS` is the address that will send transactions for deployment (e.g., your keystore address or the address associated with your private key).
 - **ETHERSCAN_API_KEY:** These keys are used by Foundry for contract verification on block explorers. Obtain them from the respective block explorer websites (e.g., Monad Explorer, Basescan).
 - **Chain IDs:** Ensure these match the actual chain IDs of the networks you are deploying to.
 - **Frontend Contract Addresses (VITE_...):** These environment variables are automatically updated by the `scripts/update-config.js` script after successful contract deployment. You do not need to manually set them in your `.env` file.
@@ -145,7 +146,7 @@ This method uses the `PRIVATE_KEY` environment variable for the target chain.
 2.  **Run the Deployment Script:**
     From the `contracts` directory, execute the deployment script for Monad:
     ```bash
-    forge script script/DeployMonad.s.sol:DeployMonad --rpc-url ${MONAD_RPC_URL} --private-key ${MONAD_PRIVATE_KEY} --broadcast --chain-id ${MONAD_CHAIN_ID} -vvvv
+    forge script script/Deploy.s.sol:Deploy --rpc-url ${MONAD_RPC_URL} --private-key ${MONAD_PRIVATE_KEY} --broadcast --chain-id ${MONAD_CHAIN_ID} -vvvv --verify
     ```
     For Base, you would need a similar script (e.g., `DeployBase.s.sol`) or modify `DeployMonad.s.sol` to be chain-agnostic and pass the appropriate RPC URL, private key, and chain ID.
 
@@ -173,81 +174,19 @@ This method is more secure as it avoids exposing your private key directly in an
 14. **Run the Keystore Deployment Script:**
     From the `contracts` directory, execute the deployment script for Monad using your keystore:
     ```bash
-    forge script script/DeployMonad.s.sol:DeployMonad --rpc-url ${MONAD_RPC_URL} --keystore /path/to/your/keystore.json --broadcast --chain-id ${MONAD_CHAIN_ID} -vvvv
+    forge script script/Deploy.s.sol:Deploy --rpc-url ${MONAD_RPC_URL} --keystore /path/to/your/keystore.json --broadcast --chain-id ${MONAD_CHAIN_ID} -vvvv --verify
     ```
     Replace `/path/to/your/keystore.json` with the actual path to your keystore file. You will be prompted for your keystore password.
 
 ### Contract Verification (Post-Deployment)
 
-After successful deployment, you **must manually verify** your contracts using the `forge verify-contract` command. This is a separate step from deployment.
+With the `--verify` flag added to the `forge script` command, contracts will be automatically verified on the block explorer after a successful deployment.
 
-**For Monad:**
-
-```bash
-forge verify-contract \
-    <GMR_CONTRACT_ADDRESS> \
-    src/GMR.sol:GMR \
-    --chain ${MONAD_CHAIN_ID} \
-    --verifier etherscan \
-    --etherscan-api-key ${MONAD_ETHERSCAN_API_KEY} \
-    --watch
-
-forge verify-contract \
-    <LEADERBOARD_CONTRACT_ADDRESS> \
-    src/Leaderboard.sol:Leaderboard \
-    --chain ${MONAD_CHAIN_ID} \
-    --verifier etherscan \
-    --etherscan-api-key ${MONAD_ETHERSCAN_API_KEY} \
-    --watch
-
-forge verify-contract \
-    <RESETSTRIKES_CONTRACT_ADDRESS> \
-    src/ResetStrikes.sol:ResetStrikes \
-    --chain ${MONAD_CHAIN_ID} \
-    --constructor-args $(cast abi encode "constructor(uint256)" <RESET_STRIKES_COST_VALUE>) \
-    --verifier etherscan \
-    --etherscan-api-key ${MONAD_ETHERSCAN_API_KEY} \
-    --watch
-```
-
-**For Base:**
-
-```bash
-forge verify-contract \
-    <GMR_CONTRACT_ADDRESS> \
-    src/GMR.sol:GMR \
-    --chain ${BASE_CHAIN_ID} \
-    --verifier etherscan \
-    --etherscan-api-key ${BASE_ETHERSCAN_API_KEY} \
-    --watch
-
-forge verify-contract \
-    <LEADERBOARD_CONTRACT_ADDRESS> \
-    src/Leaderboard.sol:Leaderboard \
-    --chain ${BASE_CHAIN_ID} \
-    --verifier etherscan \
-    --etherscan-api-key ${BASE_ETHERSCAN_API_KEY} \
-    --watch
-
-forge verify-contract \
-    <RESETSTRIKES_CONTRACT_ADDRESS> \
-    src/ResetStrikes.sol:ResetStrikes \
-    --chain ${BASE_CHAIN_ID} \
-    --constructor-args $(cast abi encode "constructor(uint256)" <RESET_STRIKES_COST_VALUE>) \
-    --verifier etherscan \
-    --etherscan-api-key ${BASE_ETHERSCAN_API_KEY} \
-    --watch
-```
-
-**Important:**
-- Replace `<GMR_CONTRACT_ADDRESS>`, `<LEADERBOARD_CONTRACT_ADDRESS>`, `<RESETSTRIKES_CONTRACT_ADDRESS>` with the actual addresses of your deployed contracts.
-- Replace `<RESET_STRIKES_COST_VALUE>` with the exact `uint256` value used for the `ResetStrikes` constructor during deployment (e.g., `7500000000000000` for `0.0075 ether`).
-- Ensure your `MONAD_ETHERSCAN_API_KEY` and `BASE_ETHERSCAN_API_KEY` environment variables are correctly set.
-- For alternative verifiers (Socialscan, Sourcify), adjust the `--verifier` and `--verifier-url` flags as per the Monad documentation.
+If auto-verification fails for any reason, you can manually verify your contracts using the `forge verify-contract` command. Refer to the Foundry documentation for detailed instructions on manual verification.
 
 ### Post-Deployment
 
-After a successful deployment, the script will create a `monad-deployed-addresses.json` file in the `contracts` directory. This file contains the addresses of the newly deployed contracts. The `scripts/update-config.js` script will automatically update the frontend configuration with these new addresses.
+After a successful deployment, the script will create a `monad-deployed-addresses.json` file in the `contracts` directory. This file contains the addresses of the newly deployed contracts. The `scripts/update-config.js` script will automatically update the `VITE_` prefixed environment variables in `src/lib/contracts.ts` with these new addresses, ensuring the frontend uses the correct contract deployments.
 
 ## Contributing
 
