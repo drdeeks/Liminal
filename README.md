@@ -116,7 +116,7 @@ The Farcaster frame and Mini App use specific image assets. Ensure these are cor
 -   `public/index.html`: The `<meta property="fc:frame:image" ... />` tag should point to your main frame image (e.g., `/liminal-assets/hero.png`).
 -   `public/.well-known/farcaster.json`: This file contains `imageUrl`, `iconUrl`, and `splashImageUrl` for both the `frame` and `miniapp` configurations. These should point to your local assets (e.g., `/liminal-assets/hero.png`, `/liminal-assets/icon.png`, `/liminal-assets/splash.png`).
 
-## Smart Contract Deployment
+## Smart Contract Deployment (with Auto-Verification)
 
 The smart contracts are located in the `contracts` directory and are managed with Foundry.
 
@@ -148,7 +148,7 @@ This method uses the `PRIVATE_KEY` environment variable for the target chain.
     ```bash
     forge script script/Deploy.s.sol:Deploy --rpc-url ${MONAD_RPC_URL} --private-key ${MONAD_PRIVATE_KEY} --broadcast --chain-id ${MONAD_CHAIN_ID} -vvvv --verify
     ```
-    For Base, you would need a similar script (e.g., `DeployBase.s.sol`) or modify `DeployMonad.s.sol` to be chain-agnostic and pass the appropriate RPC URL, private key, and chain ID.
+    The `Deploy.s.sol` script is designed to be chain-agnostic. You can use the same script for different chains by passing the appropriate RPC URL, private key, and chain ID.
 
 ### Deployment with a Keystore (Recommended for Production)
 
@@ -186,7 +186,7 @@ If auto-verification fails for any reason, you can manually verify your contract
 
 ### Post-Deployment
 
-After a successful deployment, the script will create a `monad-deployed-addresses.json` file in the `contracts` directory. This file contains the addresses of the newly deployed contracts. The `scripts/update-config.js` script will automatically update the `VITE_` prefixed environment variables in `src/lib/contracts.ts` with these new addresses, ensuring the frontend uses the correct contract deployments.
+After a successful deployment, the `Deploy.s.sol` script will create a `monad-deployed-addresses.json` file in the `contracts` directory. This file contains the addresses of the newly deployed contracts. The `scripts/update-config.js` script will automatically update the `VITE_` prefixed environment variables in `src/lib/contracts.ts` with these new addresses, ensuring the frontend uses the correct contract deployments.
 
 ## Contributing
 
