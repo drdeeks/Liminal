@@ -4,7 +4,7 @@
     "payload": "eyJkb21haW4iOiJsaW1pbmFsLWV0YS52ZXJjZWwuYXBwIn0",
     "signature": "eHlLSrwpuTAVWWRlGq2S/8qcSmOu/3BDuj2pW3RtHSBSidFINyQSKPp5ybuVPbFMXUdIY0z4Qz2LIufWP68dExs="
   }
-}
+},
   "frame": {
     "version": "1",
     "name": "Liminal",
@@ -27,7 +27,7 @@
     "splashImageUrl": "https://liminal-eta.vercel.app/splash.png",
     "splashBackgroundColor": "#000000",
     "primaryCategory": "games",
-    "tags": ["arcade", "reflex", "swipe", "blockchain", "leaderboard", "web3", "competitive", "atmospheric", "skill-based", "multiplier"],
+    "tags": "reflex", "leaderboard", "web3", "competitive", "skill-based",
     "tagline": "The deeper you go, the more it changes.",
     "heroImageUrl": "https://liminal-eta.vercel.app/splash.png",
     "ogTitle": "Liminal - A Fast-Paced Arcade Game of Reflexes",
