@@ -3,8 +3,7 @@
     "header": "eyJmaWQiOjExMDQ5MTgsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg3MDg4OTk3OGUyMDYwMjJEN2IxQkUzOWQ0NTdGZkJjNDczQjZlNDc1In0",
     "payload": "eyJkb21haW4iOiJsaW1pbmFsLWV0YS52ZXJjZWwuYXBwIn0",
     "signature": "eHlLSrwpuTAVWWRlGq2S/8qcSmOu/3BDuj2pW3RtHSBSidFINyQSKPp5ybuVPbFMXUdIY0z4Qz2LIufWP68dExs="
-  }
-},
+  },
   "frame": {
     "version": "1",
     "name": "Liminal",
