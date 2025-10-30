@@ -29,6 +29,7 @@ dist-ssr
 *.sw?
 
 # Foundry
+broadcast/
 contracts/out/
 contracts/cache/
 
@@ -45,3 +46,6 @@ contracts/cache/
 
 # Development
 jules-scratch/
+before-assertion.png
+foundry.lock
+package-lock.json.bak

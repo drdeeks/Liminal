@@ -19,11 +19,30 @@ import { base } from 'wagmi/chains';
 import { monadTestnet } from '../lib/contracts';
 import { parseEther } from 'viem';
 import { contracts } from '../lib/contracts';
+import { ChainSelector } from '../components/ui/ChainSelector';
 
 const INITIAL_STRIKES = 3;
 const CARD_INITIAL_TIME_MS = 2000;
 const CARD_MIN_TIME_MS = 750;
 const SCORE_FOR_MAX_DIFFICULTY = 5000;
+
+const introMessages = [
+    "It knows which way you'll turn before you do.",
+    "Some say it remembers every mistake you've ever made.",
+    "The deeper you go, the less certain direction becomes.",
+    "Three chances. Three warnings. Three doors closing.",
+    "Time bends differently here—faster with each breath.",
+    "The joker always lies, but only when you're watching.",
+    "Your score isn't measuring skill. It's measuring something else.",
+    "The atmosphere shifts because you've gone too far to return.",
+    "Every swipe leaves a trace in the space between decisions.",
+    "It rewards precision, but it craves hesitation.",
+    "The leaderboard doesn't just track players—it watches them.",
+    "Reset your strikes, but you can't reset what it's learned about you.",
+    "The music changes when you cross a threshold you can't see.",
+    "Opposite means something different at the edges of the game.",
+    "Each card is a test. Each test is a doorway. Each doorway narrows.",
+];
 
 const App: React.FC = () => {
     const { address, isConnected, chain } = useAccount();
@@ -50,7 +69,7 @@ const App: React.FC = () => {
         }
     }, [ethPriceData]);
 
-    const [gameState, setGameState] = useState<GameState>('menu');
+    const [gameState, setGameState] = useState<GameState>('howToPlay');
     const [score, setScore] = useState(0);
     const [strikes, setStrikes] = useState(INITIAL_STRIKES);
     const [highScore, setHighScore] = useState(0);
@@ -68,6 +87,7 @@ const App: React.FC = () => {
     const [entranceCountdown, setEntranceCountdown] = useState(3);
     const [showConnectors, setShowConnectors] = useState(false);
     const [activeChain, setActiveChain] = useState(chain);
+    const [introMessage, setIntroMessage] = useState('');
 
     useEffect(() => {
         if (chain) {
@@ -121,6 +141,8 @@ const App: React.FC = () => {
     }, [cardTimerId, handleGenerateNewCard, gameState]);
 
     const startGame = () => {
+        const randomIndex = Math.floor(Math.random() * introMessages.length);
+        setIntroMessage(introMessages[randomIndex]);
         setEntranceState('sentence');
     };
 
@@ -290,9 +312,7 @@ const App: React.FC = () => {
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 z-50 transition-opacity duration-1000">
                     <p className="text-white text-4xl text-center entrance-sentence-fade-out">
-                        The Length of the Liminal is unknown.
-                        <br />
-                        The End, has never been discovered.
+                        {introMessage}
                     </p>
                 </div>
             );
@@ -306,7 +326,47 @@ const App: React.FC = () => {
 
         switch (gameState) {
             case 'howToPlay':
-                return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />;
+                return isConnected ? (
+                    <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} />
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full">
+                        <h1 className="text-6xl font-bold text-white mb-8 title-shadow">Liminal</h1>
+                        <div className="relative">
+                            <button
+                                className="px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
+                                onClick={() => setShowConnectors(prev => !prev)}
+                            >
+                                Connect Wallet
+                            </button>
+                            <AnimatePresence>
+                                {showConnectors && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className="absolute bottom-full mb-2 w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-white/20"
+                                    >
+                                        <ul className="text-white text-center">
+                                            {connectors.map((connector) => (
+                                                <li key={connector.uid}>
+                                                    <button
+                                                        className="w-full px-4 py-3 text-xl hover:bg-gray-700/50 transition-colors"
+                                                        onClick={() => {
+                                                            connect({ connector });
+                                                            setShowConnectors(false);
+                                                        }}
+                                                    >
+                                                        {connector.name}
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                );
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden">
@@ -360,34 +420,21 @@ const App: React.FC = () => {
                                 >
                                     Start Game
                                 </button>
-                                <button
-                                    className="mt-4 px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow hover:bg-gray-700 transition-colors"
-                                    onClick={() => disconnect()}
-                                >
-                                    Disconnect
-                                </button>
-                                <button
-                                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
-                                    onClick={handleGm}
-                                >
-                                    Say GM
-                                </button>
-                                <div className="mt-4">
-                                    <label htmlFor="chain-select" className="text-white mr-2">Chain:</label>
-                                    <select
-                                        id="chain-select"
-                                        value={activeChain?.id || ''}
-                                        onChange={(e) => {
-                                            const newChainId = parseInt(e.target.value) as typeof base.id | typeof monadTestnet.id;
-                                            switchChain({ chainId: newChainId });
-                                        }}
-                                        className="bg-gray-800 text-white rounded-lg p-2"
-                                    >
-                                        <option value={base.id}>Base</option>
-                                        <option value={monadTestnet.id}>Monad</option>
-                                    </select>
-                                </div>
-                            </div>
+                                                    <button
+                                                        className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                                        onClick={handleViewLeaderboard}
+                                                    >
+                                                        Leaderboard
+                                                    </button>
+                                                    <button
+                                                        className="mt-4 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow hover:bg-purple-700 transition-colors"
+                                                        onClick={handleGm}
+                                                    >
+                                                        Say GM
+                                                    </button>
+                                                    <div className="mt-4">
+                                                        <ChainSelector activeChain={activeChain} switchChain={switchChain} />
+                                                    </div>                            </div>
                         ) : (
                             <div className="relative">
                                 <button
@@ -430,14 +477,14 @@ const App: React.FC = () => {
     };
 
     const gameIntensity = useMemo(() => {
-        return Math.min(score / 1000, 1);
+        return Math.min(score / 750, 1);
     }, [score]);
 
     return (
-        <main className={`w-screen h-screen overflow-hidden ${shake ? 'animate-shake' : ''}`}>
-            <LiminalBackground difficulty={1 + gameIntensity * 9} intensity={gameIntensity} />
-            <OverlayNoise intensity={gameIntensity} />
-            <TemporalBackground phase={gameIntensity * 5} intensity={gameIntensity} />
+        <main className={`w-screen h-screen overflow-hidden ${shake ? 'animate-shake' : ''} pt-24`}>
+            <LiminalBackground difficulty={1 + gameIntensity * 14} />
+            <OverlayNoise intensity={gameIntensity * 100} />
+            <TemporalBackground phase={gameIntensity * 7} intensity={gameIntensity * 100} />
             <AtmosphereManager score={score} />
             <SparkleController on={sparkle} onComplete={() => setSparkle(false)} />
             <AudioManager ref={audioManager} isMusicMuted={false} isSfxMuted={false} multiplier={gameIntensity} onMilestone={() => {}} stage={gameIntensity * 5} />
@@ -446,9 +493,9 @@ const App: React.FC = () => {
 
             <div className="absolute top-0 left-0 right-0 p-4 z-10">
                 <div className="flex justify-between items-center text-white text-2xl font-bold bg-black/20 p-3 rounded-lg border-2 border-white/20 backdrop-blur-sm w-full">
-                    <div className="text-shadow-pop">
-                        <span className="text-white/70 text-lg font-semibold">SCORE</span>
-                        <p data-testid="score">{score}</p>
+                <div className="text-shadow-pop">
+                    <span className="text-white/70 text-lg font-semibold">SCORE</span>
+                    <p data-testid="score">{score}</p>
                     </div>
                     <div className="flex-grow flex justify-center">
                         <CountdownTimer
@@ -458,13 +505,26 @@ const App: React.FC = () => {
                             gameState={gameState}
                         />
                     </div>
-                    <div className="text-shadow-pop text-right">
-                        <span className="text-white/70 text-lg font-semibold">MULTIPLIER</span>
-                        <p>{multiplier}x</p>
-                    </div>
-                </div>
+                                    <div className="text-shadow-pop text-right">
+                                        {isConnected ? (
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-white/70 text-lg font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                                                <button
+                                                    className="text-white/50 hover:text-white transition-colors text-sm"
+                                                    onClick={() => disconnect()}
+                                                >
+                                                    (Disconnect)
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-white/70 text-lg font-semibold">MULTIPLIER</span>
+                                                <p>{multiplier}x</p>
+                                            </div>
+                                        )}
+                                    </div>                </div>
                 <div className="absolute left-1/2 -translate-x-1/2 mt-2">
-                    {gameState !== 'gameOver' && <StrikesDisplay key={gameState} strikes={strikes} />}
+                    {gameState === 'playing' && <StrikesDisplay key={gameState} strikes={strikes} />}
                 </div>
             </div>
 
