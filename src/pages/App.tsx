@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSwitchChain } from 'wagmi';
+import sdk from '@farcaster/miniapp-sdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DirectionCard } from '../components/game/DirectionCard';
 import { GameOverScreen } from '../components/screens/GameOverScreen';
@@ -95,6 +96,10 @@ const App: React.FC = () => {
             setIsScoreSubmitted(true);
         }
     }, [isConfirmed]);
+
+    useEffect(() => {
+        sdk.actions.ready();
+    }, []);
 
     useEffect(() => {
         if (chain) {
