@@ -1,9 +1,10 @@
 {
   "accountAssociation": {
-    "header": "eyJmaWQiOjEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhGRDdENzIzN0VFRjdENjJEMkIzMzY0MkQyMjY5RjU4MkI2NUM3MzBFIn0",
+    "header": "eyJmaWQiOjExMDQ5MTgsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg3MDg4OTk3OGUyMDYwMjJEN2IxQkUzOWQ0NTdGZkJjNDczQjZlNDc1In0",
     "payload": "eyJkb21haW4iOiJsaW1pbmFsLWV0YS52ZXJjZWwuYXBwIn0",
-    "signature": "MHhkNjJjOTY4ZGY3ZTA0NmFhNzVhMWYzOTM4ZTU2NDIzZDlmNWMzYzVlZmI2YmZkYjBiNTk3MTk2MjlhNTA3MWQzNjQwMmY3ZjczNGU4YzY2ZTNjMDU0ZWRhNTM5MWQ2NTM2NTA3ODU2NDY0ZWE1YmY4NWNhNmZkYjQzNWJiZmY5YTFi"
-  },
+    "signature": "eHlLSrwpuTAVWWRlGq2S/8qcSmOu/3BDuj2pW3RtHSBSidFINyQSKPp5ybuVPbFMXUdIY0z4Qz2LIufWP68dExs="
+  }
+}
   "frame": {
     "version": "1",
     "name": "Liminal",
