@@ -1,21 +1,31 @@
   },
   "frame": {
+    "version": "1",
     "name": "Liminal",
-    "iconUrl": "/icon.png",
-    "homeUrl": "https://liminal.game",
-    "imageUrl": "https://liminal.game/og-image.png",
-    "buttonTitle": "Start Playing",
-    "splashImageUrl": "/splash.png",
+    "iconUrl": "https://liminal-eta.vercel.app/icon.png",
+    "homeUrl": "https://liminal-eta.vercel.app",
+    "imageUrl": "https://liminal-eta.vercel.app/splash.png",
+    "buttonTitle": "Play Liminal",
+    "splashImageUrl": "https://liminal-eta.vercel.app/splash.png",
     "splashBackgroundColor": "#000000"
   },
   "miniapp": {
     "version": "1",
     "name": "Liminal",
-    "iconUrl": "/icon.png",
-    "homeUrl": "https://liminal.game",
-    "imageUrl": "https://liminal.game/og-image.png",
-    "buttonTitle": "Start Playing",
-    "splashImageUrl": "/splash.png",
-    "splashBackgroundColor": "#000000"
+    "iconUrl": "https://liminal-eta.vercel.app/icon.png",
+    "subtitle": "A fast-paced arcade game of reflexes.",
+    "description": "Test your reflexes in an atmospheric, ever-changing world. Swipe in the correct direction before time runs out, climb the on-chain leaderboard, and see how long you can survive. Features dynamic difficulty, joker cards, multiplier system, and an evolving audio-visual experience that intensifies as you progress deeper into the game.",
+    "homeUrl": "https://liminal-eta.vercel.app",
+    "imageUrl": "https://liminal-eta.vercel.app/splash.png",
+    "buttonTitle": "Play Liminal",
+    "splashImageUrl": "https://liminal-eta.vercel.app/splash.png",
+    "splashBackgroundColor": "#000000",
+    "primaryCategory": "games",
+    "tags": ["arcade", "reflex", "swipe", "blockchain", "leaderboard", "web3", "competitive", "atmospheric", "skill-based", "multiplier"],
+    "tagline": "The deeper you go, the more it changes.",
+    "heroImageUrl": "https://liminal-eta.vercel.app/splash.png",
+    "ogTitle": "Liminal - A Fast-Paced Arcade Game of Reflexes",
+    "ogDescription": "Test your reflexes in an atmospheric, ever-changing world. The deeper you go, the more it changes. Compete on the on-chain leaderboard!",
+    "ogImageUrl": "https://liminal-eta.vercel.app/splash.png"
   }
 }
