@@ -97,9 +97,17 @@ const App: React.FC = () => {
         }
     }, [isConfirmed]);
 
+    const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+
     useEffect(() => {
-        sdk.actions.ready();
-    }, []);
+        const loadSdk = async () => {
+            if (sdk && !isSdkLoaded) {
+                await sdk.actions.ready();
+                setIsSdkLoaded(true);
+            }
+        };
+        loadSdk();
+    }, [isSdkLoaded]);
 
     useEffect(() => {
         if (chain) {
