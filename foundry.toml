@@ -53,15 +53,21 @@ number_underscore = "thousands"
 eth_rpc_url = "${MONAD_RPC_URL}"
 chain_id = 10143
 sender = "${SENDER_ADDRESS}"
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 
 # ============================================
 # MONAD MAINNET (INACTIVE - Uncomment when live)
 # ============================================
-# [profile.monad]
-# eth_rpc_url = "https://rpc.monad.xyz"
-# chain_id = 143
-# sender = "${SENDER_ADDRESS}"
-# verify = true
+[profile.monad]
+eth_rpc_url = "https://rpc.monad.xyz"
+chain_id = 143
+sender = "${SENDER_ADDRESS}"
+verify = true
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 # [profile.monad.etherscan]
 # monad = { key = "${ETHERSCAN_API_KEY}", url = "https://explorer.monad.xyz/api" }
 
@@ -70,9 +76,11 @@ sender = "${SENDER_ADDRESS}"
 # ============================================
 [profile.base]
 eth_rpc_url = "${BASE_RPC_URL}"
-chain_id = 8453
 sender = "${SENDER_ADDRESS}"
 verify = true
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 [profile.base.etherscan]
 base = { key = "${BASESCAN_API_KEY}" }
 
@@ -84,6 +92,9 @@ eth_rpc_url = "${BASE_SEPOLIA_RPC_URL}"
 chain_id = 84532
 sender = "${SENDER_ADDRESS}"
 verify = true
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 [profile.basetest.etherscan]
 base_sepolia = { key = "${BASESCAN_API_KEY}" }
 
