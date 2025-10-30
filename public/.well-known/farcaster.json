@@ -14,8 +14,8 @@
     "splashImageUrl": "https://liminal-eta.vercel.app/splash.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://liminal-eta.vercel.app/api/webhook",
-    "subtitle": "A fast-paced arcade game of reflexes.",
-    "description": "Test your reflexes in an atmospheric, ever-changing world. Swipe in the correct direction before time runs out, climb the on-chain leaderboard, and see how long you can survive. Features dynamic difficulty, joker cards, multiplier system, and an evolving audio-visual experience that intensifies as you progress deeper into the game.",
+    "subtitle": "A fast-paced reflex tester.",
+    "description": "Test your reflexes in this ever-changing world. Dont fall vitim the the Jokers tricks, stay alert. Welcome to the Liminal",
     "primaryCategory": "games",
     "heroImageUrl": "https://liminal-eta.vercel.app/splash.png",
     "tags": [
