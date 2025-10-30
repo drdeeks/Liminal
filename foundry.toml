@@ -6,6 +6,9 @@ test = "contracts/test"
 cache_path = "contracts/cache"
 script = "contracts/script"
 load_dotenv = true
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 
 # Compiler settings
 solc_version = "0.8.20"
