@@ -1,5 +1,10 @@
-}
-  "frame": {
+{
+"accountAssociation": {
+    "header": "eyJmaWQiOjExMDQ5MTgsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg3MDg4OTk3OGUyMDYwMjJEN2IxQkUzOWQ0NTdGZkJjNDczQjZlNDc1In0",
+    "payload": "eyJkb21haW4iOiJsaW1pbmFsLWV0YS52ZXJjZWwuYXBwIn0",
+    "signature": "eHlLSrwpuTAVWWRlGq2S/8qcSmOu/3BDuj2pW3RtHSBSidFINyQSKPp5ybuVPbFMXUdIY0z4Qz2LIufWP68dExs="
+  },
+  "miniapp": {
     "name": "Liminal",
     "version": "1",
     "iconUrl": "https://liminal-eta.vercel.app/icon.png",
@@ -24,10 +29,5 @@
     "ogTitle": "Liminal - How focused are you?",
     "ogDescription": "Test your reflexes in this ever changing world. Whatch out for the Jokers tricks!",
     "ogImageUrl": "https://liminal-eta.vercel.app/splash.png"
-  },
-  "accountAssociation": {
-    "header": "eyJmaWQiOjExMDQ5MTgsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg3MDg4OTk3OGUyMDYwMjJEN2IxQkUzOWQ0NTdGZkJjNDczQjZlNDc1In0",
-    "payload": "eyJkb21haW4iOiJsaW1pbmFsLWV0YS52ZXJjZWwuYXBwIn0",
-    "signature": "eHlLSrwpuTAVWWRlGq2S/8qcSmOu/3BDuj2pW3RtHSBSidFINyQSKPp5ybuVPbFMXUdIY0z4Qz2LIufWP68dExs="
   }
 }
