@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState, useMemo } from 'react';
 import Sparkle from './Sparkle';
 
 interface SparkleControllerProps {
@@ -6,23 +6,27 @@ interface SparkleControllerProps {
     onComplete: () => void;
 }
 
-const SPARKLE_COUNT = 8;
-const SPARKLE_DURATION = 800;
+const SPARKLE_COUNT = 12; // Increased for a richer effect
+const SPARKLE_DURATION = 1200; // Increased for a longer, more graceful animation
 
 const SparkleController: FC<SparkleControllerProps> = ({ on, onComplete }) => {
-    const [sparkles, setSparkles] = useState<{ id: string; x: number; y: number; size: number }[]>([]);
+    const [isPlaying, setIsPlaying] = useState(false);
+
+    const sparkles = useMemo(() => {
+        return Array.from({ length: SPARKLE_COUNT }).map((_, i) => ({
+            id: `sparkle-${i}`,
+            x: Math.random() * 100, // Use percentages for responsive positioning
+            y: Math.random() * 100,
+            size: Math.random() * 25 + 10,
+            delay: Math.random() * SPARKLE_DURATION, // Stagger the animations
+        }));
+    }, []);
 
     useEffect(() => {
         if (on) {
-            const newSparkles = Array.from({ length: SPARKLE_COUNT }).map(() => ({
-                id: `sparkle-${Math.random()}`,
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-                size: Math.random() * 20 + 10,
-            }));
-            setSparkles(newSparkles);
+            setIsPlaying(true);
             const timer = setTimeout(() => {
-                setSparkles([]);
+                setIsPlaying(false);
                 onComplete();
             }, SPARKLE_DURATION);
             return () => clearTimeout(timer);
@@ -30,9 +34,19 @@ const SparkleController: FC<SparkleControllerProps> = ({ on, onComplete }) => {
     }, [on, onComplete]);
 
     return (
-        <div className="absolute inset-0 pointer-events-none">
-            {sparkles.map(({ id, x, y, size }) => (
-                <Sparkle key={id} id={id} x={x} y={y} size={size} />
+        <div className={`absolute inset-0 pointer-events-none overflow-hidden ${isPlaying ? 'animate-sparkle-fade-in' : 'opacity-0'}`}>
+            {sparkles.map(({ id, x, y, size, delay }) => (
+                <div
+                    key={id}
+                    className="absolute animate-sparkle-move"
+                    style={{
+                        left: `${x}%`,
+                        top: `${y}%`,
+                        animationDelay: `${delay}ms`,
+                    }}
+                >
+                    <Sparkle id={id} x={0} y={0} size={size} />
+                </div>
             ))}
         </div>
     );

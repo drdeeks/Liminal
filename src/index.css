@@ -10,6 +10,26 @@
   }
 }
 
+@keyframes sparkle-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sparkle-move {
+  from { transform: translate(0, 0) scale(0.5); opacity: 1; }
+  to { transform: translate(var(--sparkle-end-x, 0), var(--sparkle-end-y, 0)) scale(1.5); opacity: 0; }
+}
+
+.animate-sparkle-fade-in {
+  animation: sparkle-fade-in 0.5s forwards;
+}
+
+.animate-sparkle-move {
+  --sparkle-end-x: calc( (Math.random() - 0.5) * 200px );
+  --sparkle-end-y: calc( (Math.random() - 0.5) * 200px );
+  animation: sparkle-move 1.2s forwards;
+}
+
 @keyframes flash-neon {
   0% { background-color: transparent; }
   50% { background-color: rgba(0, 255, 255, 0.7); /* Brighter Cyan neon */ }

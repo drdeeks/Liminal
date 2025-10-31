@@ -7,7 +7,7 @@ interface HowToPlayScreenProps {
 
 export const HowToPlayScreen: React.FC<HowToPlayScreenProps> = ({ onStart, onCancel }) => {
   return (
-    <div className="flex items-center justify-center h-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-gray-900 border-2 border-white/20 text-white p-8 rounded-2xl max-w-lg text-center shadow-lg">
         <h2 className="text-4xl font-black mb-4 text-glitter">How to Play</h2>
         <div className="text-lg space-y-4 mb-8">

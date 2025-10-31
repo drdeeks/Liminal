@@ -24,7 +24,7 @@ const directionMap = {
   [Direction.Right]: <ArrowRightIcon />,
 };
 
-export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp, onCorrectSwipe, onIncorrectSwipe, isJoker, score, keyboardSwipeOutDirection }) => {
+const DirectionCardMemoized = React.memo<DirectionCardProps>(({ direction, keyProp, onCorrectSwipe, onIncorrectSwipe, isJoker, score, keyboardSwipeOutDirection }) => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [isConfirmed, setIsConfirmed] = useState(false);
@@ -237,4 +237,13 @@ export const DirectionCard: React.FC<DirectionCardProps> = ({ direction, keyProp
             </div>
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    // Only re-render if these specific props change
+    return prevProps.direction === nextProps.direction &&
+           prevProps.keyProp === nextProps.keyProp &&
+           prevProps.isJoker === nextProps.isJoker &&
+           prevProps.keyboardSwipeOutDirection === nextProps.keyboardSwipeOutDirection;
+});
+
+export const DirectionCard = DirectionCardMemoized;
+
