@@ -54,6 +54,14 @@ const App: React.FC = () => {
     const { data: gmrHash, writeContract: writeGmrContract } = useWriteContract();
     const { data: resetStrikesHash, writeContract: writeResetStrikesContract } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+    const { isSuccess: isResetStrikesSuccess } = useWaitForTransactionReceipt({ hash: resetStrikesHash });
+
+    useEffect(() => {
+        if (isResetStrikesSuccess) {
+            setStrikes(INITIAL_STRIKES);
+            setGameState('playing');
+        }
+    }, [isResetStrikesSuccess]);
 
     const audioManager = useRef<AudioManagerHandle>(null);
 
@@ -161,15 +169,15 @@ const App: React.FC = () => {
     }, [cardTimerId, handleGenerateNewCard, gameState]);
 
     const startGame = () => {
+        setGameState('howToPlay');
+    };
+
+    const handlePlayNow = () => {
+        setScore(0);
+        setStrikes(INITIAL_STRIKES);
         const randomIndex = Math.floor(Math.random() * introMessages.length);
         setIntroMessage(introMessages[randomIndex]);
         setEntranceState('sentence');
-    };
-
-    const handleStartGame = () => {
-        setScore(0);
-        setStrikes(INITIAL_STRIKES);
-        setGameState('playing'); // Directly start playing after entrance sequence
     };
 
     const handleCountdownComplete = () => {
@@ -178,6 +186,9 @@ const App: React.FC = () => {
     };
 
     const handlePlayAgain = () => {
+        setScore(0);
+        setStrikes(INITIAL_STRIKES);
+        setIsScoreSubmitted(false);
         startGame();
     };
 
@@ -346,7 +357,7 @@ const App: React.FC = () => {
 
         switch (gameState) {
             case 'howToPlay':
-                return <HowToPlayScreen onStart={handleStartGame} onCancel={handleBackToMenu} onViewLeaderboard={handleViewLeaderboard} />;
+                return <HowToPlayScreen onStart={handlePlayNow} onCancel={handleBackToMenu} />;
             case 'playing':
                 return (
                     <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden bg-black/50 backdrop-blur-sm p-4 rounded-lg max-w-md mx-auto my-auto">
@@ -419,39 +430,31 @@ const App: React.FC = () => {
                         ) : (
                             <div className="relative flex flex-col items-center">
                                 <button
-                                    className="w-64 px-8 py-4 bg-blue-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105 mb-4"
-                                    onClick={() => setShowConnectors(prev => !prev)}
+                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
+                                    onClick={() => {
+                                        const farcasterConnector = connectors.find(c => c.name === 'Injected' || c.name === 'Farcaster');
+                                        if (farcasterConnector) {
+                                            connect({ connector: farcasterConnector });
+                                        }
+                                    }}
                                 >
-                                    Connect Wallet
+                                    Connect with Farcaster
                                 </button>
-                                <AnimatePresence>
-                                    {showConnectors && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 10 }}
-                                            className="absolute bottom-full mb-2 w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-white/20"
-                                        >
-                                            <ul className="text-white text-center">
-                                                {connectors.map((connector) => (
-                                                    <li key={connector.uid}>
-                                                        <button
-                                                            className="w-full px-4 py-3 text-xl hover:bg-gray-700/50 transition-colors"
-                                                            onClick={() => {
-                                                                connect({ connector });
-                                                                setShowConnectors(false);
-                                                            }}
-                                                        >
-                                                            {connector.name}
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                <div className="flex gap-4 mt-2">
+                                    {
+                                        connectors.filter(c => c.name === 'MetaMask' || c.name === 'WalletConnect').map(connector => (
+                                            <button
+                                                key={connector.uid}
+                                                className="px-6 py-2 bg-gray-700 text-white font-bold rounded-lg text-lg shadow-md hover:bg-gray-600 transition-transform transform hover:scale-105"
+                                                onClick={() => connect({ connector })}
+                                            >
+                                                {connector.name}
+                                            </button>
+                                        ))
+                                    }
+                                </div>
                                 <button
-                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-64 mt-8 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
                                 >
                                     Leaderboard

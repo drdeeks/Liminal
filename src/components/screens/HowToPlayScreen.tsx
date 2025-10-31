@@ -24,7 +24,7 @@ export const HowToPlayScreen: React.FC<HowToPlayScreenProps> = ({ onStart, onCan
             onClick={onStart}
             className="bg-green-600/50 text-white font-bold py-3 px-8 rounded-lg text-2xl shadow-lg hover:bg-green-600/70 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm"
           >
-            Start Game
+            Play Now
           </button>
           <button
             onClick={onCancel}
