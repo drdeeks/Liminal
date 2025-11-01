@@ -102,6 +102,12 @@ const App: React.FC = () => {
     const [isScoreSubmitted, setIsScoreSubmitted] = useState(false);
 
     useEffect(() => {
+        if (strikes === 0 && gameState === 'playing') {
+            setGameState('gameOver');
+        }
+    }, [strikes, gameState]);
+
+    useEffect(() => {
         if (isConfirmed) {
             setIsScoreSubmitted(true);
         }

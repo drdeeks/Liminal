@@ -9,7 +9,7 @@ interface SwipeOptions {
 
 export const useSwipe = (element: HTMLElement | null, options?: SwipeOptions) => {
   const [swipeDirection, setSwipeDirection] = useState<SwipeDirection>(null);
-  const threshold = options?.threshold ?? 50;
+  const threshold = options?.threshold ?? 75;
 
   useEffect(() => {
     if (!element) return;
@@ -25,7 +25,6 @@ export const useSwipe = (element: HTMLElement | null, options?: SwipeOptions) =>
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
       touchEndX = e.changedTouches[0].screenX;
       touchEndY = e.changedTouches[0].screenY;
       handleSwipe();
