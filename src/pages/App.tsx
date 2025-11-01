@@ -441,38 +441,13 @@ const App: React.FC = () => {
                                 <button
                                     className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={() => {
-                                        const farcasterConnector = connectors.find(c => c.name === 'Injected' || c.name === 'Farcaster');
-                                        if (farcasterConnector) {
-                                            connect({ connector: farcasterConnector });
+                                        const walletConnectConnector = connectors.find(c => c.name === 'WalletConnect');
+                                        if (walletConnectConnector) {
+                                            connect({ connector: walletConnectConnector });
                                         }
                                     }}
                                 >
-                                    Connect with Farcaster
-                                </button>
-                                <div className="flex gap-4 mt-2">
-                                    {
-                                        connectors.filter(c => c.name === 'MetaMask' || c.name === 'WalletConnect').map(connector => (
-                                            <button
-                                                key={connector.uid}
-                                                className="px-6 py-2 bg-gray-700 text-white font-bold rounded-lg text-lg shadow-md hover:bg-gray-600 transition-transform transform hover:scale-105"
-                                                onClick={() => connect({ connector })}
-                                            >
-                                                {connector.name}
-                                            </button>
-                                        ))
-                                    }
-                                </div>
-                                <button
-                                    className="w-64 mt-8 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
-                                    onClick={handleViewLeaderboard}
-                                >
-                                    Leaderboard
-                                </button>
-                                <button
-                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
-                                    onClick={handleGm}
-                                >
-                                    Say GM
+                                    Connect with WalletConnect
                                 </button>
                             </div>
                         )}
