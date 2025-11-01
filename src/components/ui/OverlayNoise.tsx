@@ -1,23 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface OverlayNoiseProps {
   intensity: number;
 }
 
 export const OverlayNoise: React.FC<OverlayNoiseProps> = ({ intensity }) => {
-  const [time, setTime] = useState(0);
+  const frameId = useRef<number | null>(null);
+  const [scanlineY, setScanlineY] = useState(0);
+
+  const animate = () => {
+    setScanlineY(y => (y + 1) % window.innerHeight);
+    frameId.current = requestAnimationFrame(animate);
+  };
 
   useEffect(() => {
-    if (intensity === 0) return;
-    const interval = setInterval(() => {
-      setTime(t => t + 0.05);
-    }, 50);
-    return () => clearInterval(interval);
+    if (intensity > 0) {
+      frameId.current = requestAnimationFrame(animate);
+    } else {
+      if (frameId.current) {
+        cancelAnimationFrame(frameId.current);
+        frameId.current = null;
+      }
+    }
+
+    return () => {
+      if (frameId.current) {
+        cancelAnimationFrame(frameId.current);
+      }
+    };
   }, [intensity]);
 
   const normalizedIntensity = Math.min(intensity / 100, 1);
   const noiseOpacity = normalizedIntensity * 0.12;
-  const scanlineSpeed = 1 + normalizedIntensity * 1.5;
   const vignetteIntensity = normalizedIntensity * 0.35;
   const pixelationAmount = intensity > 85 ? Math.floor(normalizedIntensity * 4) : 0;
 
@@ -36,7 +50,7 @@ export const OverlayNoise: React.FC<OverlayNoiseProps> = ({ intensity }) => {
             )
           `,
           opacity: noiseOpacity,
-          animation: `scanline ${3 / scanlineSpeed}s linear infinite`,
+          transform: `translateY(${scanlineY}px)`,
         }}
       />
 
@@ -84,13 +98,6 @@ export const OverlayNoise: React.FC<OverlayNoiseProps> = ({ intensity }) => {
           }}
         />
       )}
-
-      <style>{`
-        @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
-      `}</style>
     </>
   );
 };

@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSwitchChain } from 'wagmi';
 import sdk from '@farcaster/miniapp-sdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DirectionCard } from '../components/game/DirectionCard';
-import { GameOverScreen } from '../components/screens/GameOverScreen';
-import { HowToPlayScreen } from '../components/screens/HowToPlayScreen';
-import { LeaderboardScreen } from '../components/screens/LeaderboardScreen';
 import { CountdownTimer } from '../components/game/CountdownTimer';
 import { StrikesDisplay } from '../components/game/StrikesDisplay';
+
+const HowToPlayScreen = lazy(() => import('../components/screens/HowToPlayScreen').then(module => ({ default: module.HowToPlayScreen })));
+const GameOverScreen = lazy(() => import('../components/screens/GameOverScreen').then(module => ({ default: module.GameOverScreen })));
+const LeaderboardScreen = lazy(() => import('../components/screens/LeaderboardScreen').then(module => ({ default: module.LeaderboardScreen })));
+
 
 import { SparkleController } from '../components/ui/SparkleController';
 import { AtmosphereManager } from '../systems/AtmosphereManager';
@@ -270,11 +272,18 @@ const App: React.FC = () => {
     }, [address, activeChain, score, writeContract]);
 
     useEffect(() => {
-        if (strikes <= 0) {
-            setGameState('gameOver');
-            console.log('Game Over triggered. GameState:', 'gameOver');
+        const storedHighScore = localStorage.getItem('highScore');
+        if (storedHighScore) {
+            setHighScore(parseInt(storedHighScore, 10));
         }
-    }, [strikes]);
+    }, []);
+
+    useEffect(() => {
+        if (gameState === 'gameOver' && score > highScore) {
+            setHighScore(score);
+            localStorage.setItem('highScore', score.toString());
+        }
+    }, [gameState, score, highScore]);
 
     useEffect(() => {
         if (gameState === 'gameOver') {
@@ -433,37 +442,27 @@ const App: React.FC = () => {
                                     className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={() => {
                                         const farcasterConnector = connectors.find(c => c.name === 'Injected' || c.name === 'Farcaster');
+                                        const metaMaskConnector = connectors.find(c => c.name === 'MetaMask');
+                                        const walletConnectConnector = connectors.find(c => c.name === 'WalletConnect');
+
                                         if (farcasterConnector) {
                                             connect({ connector: farcasterConnector });
+                                        } else if (metaMaskConnector) {
+                                            connect({ connector: metaMaskConnector });
+                                        } else if (walletConnectConnector) {
+                                            connect({ connector: walletConnectConnector });
+                                        } else {
+                                            console.warn("No suitable wallet connector found.");
                                         }
                                     }}
                                 >
-                                    Connect with Farcaster
+                                    Connect wallet
                                 </button>
-                                <div className="flex gap-4 mt-2">
-                                    {
-                                        connectors.filter(c => c.name === 'MetaMask' || c.name === 'WalletConnect').map(connector => (
-                                            <button
-                                                key={connector.uid}
-                                                className="px-6 py-2 bg-gray-700 text-white font-bold rounded-lg text-lg shadow-md hover:bg-gray-600 transition-transform transform hover:scale-105"
-                                                onClick={() => connect({ connector })}
-                                            >
-                                                {connector.name}
-                                            </button>
-                                        ))
-                                    }
-                                </div>
                                 <button
-                                    className="w-64 mt-8 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
                                 >
                                     Leaderboard
-                                </button>
-                                <button
-                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
-                                    onClick={handleGm}
-                                >
-                                    Say GM
                                 </button>
                             </div>
                         )}
@@ -524,7 +523,9 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            {renderGameState()}
+            <Suspense fallback={<div>Loading...</div>}>
+                {renderGameState()}
+            </Suspense>
         </main>
     );
 };
