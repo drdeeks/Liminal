@@ -441,12 +441,28 @@ const App: React.FC = () => {
                                 <button
                                     className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={() => {
-                                        connectors.forEach(connector => {
-                                            connect({ connector });
-                                        });
+                                        const farcasterConnector = connectors.find(c => c.name === 'Injected' || c.name === 'Farcaster');
+                                        const metaMaskConnector = connectors.find(c => c.name === 'MetaMask');
+                                        const walletConnectConnector = connectors.find(c => c.name === 'WalletConnect');
+
+                                        if (farcasterConnector) {
+                                            connect({ connector: farcasterConnector });
+                                        } else if (metaMaskConnector) {
+                                            connect({ connector: metaMaskConnector });
+                                        } else if (walletConnectConnector) {
+                                            connect({ connector: walletConnectConnector });
+                                        } else {
+                                            console.warn("No suitable wallet connector found.");
+                                        }
                                     }}
                                 >
                                     Connect wallet
+                                </button>
+                                <button
+                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
+                                    onClick={handleViewLeaderboard}
+                                >
+                                    Leaderboard
                                 </button>
                             </div>
                         )}
