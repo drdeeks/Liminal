@@ -441,13 +441,12 @@ const App: React.FC = () => {
                                 <button
                                     className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={() => {
-                                        const walletConnectConnector = connectors.find(c => c.name === 'WalletConnect');
-                                        if (walletConnectConnector) {
-                                            connect({ connector: walletConnectConnector });
-                                        }
+                                        connectors.forEach(connector => {
+                                            connect({ connector });
+                                        });
                                     }}
                                 >
-                                    Connect with WalletConnect
+                                    Connect wallet
                                 </button>
                             </div>
                         )}
