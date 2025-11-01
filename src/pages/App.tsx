@@ -100,7 +100,6 @@ const App: React.FC = () => {
     const [activeChain, setActiveChain] = useState(chain);
     const [introMessage, setIntroMessage] = useState('');
     const [isScoreSubmitted, setIsScoreSubmitted] = useState(false);
-    const [showOtherConnectors, setShowOtherConnectors] = useState(false);
 
     useEffect(() => {
         if (isConfirmed) {
@@ -450,27 +449,19 @@ const App: React.FC = () => {
                                 >
                                     Connect with Farcaster
                                 </button>
-                                <button
-                                    className="w-64 px-8 py-2 bg-gray-700 text-white font-bold rounded-lg text-lg shadow-md hover:bg-gray-600 transition-transform transform hover:scale-105 mb-4"
-                                    onClick={() => setShowOtherConnectors(!showOtherConnectors)}
-                                >
-                                    Other Wallets
-                                </button>
-                                {showOtherConnectors && (
-                                    <div className="flex flex-col items-center gap-4 mt-2">
-                                        {
-                                            connectors.filter(c => c.name === 'MetaMask' || c.name === 'WalletConnect').map(connector => (
-                                                <button
-                                                    key={connector.uid}
-                                                    className="w-64 px-8 py-4 bg-gray-700 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-gray-600 transition-transform transform hover:scale-105"
-                                                    onClick={() => connect({ connector })}
-                                                >
-                                                    {connector.name}
-                                                </button>
-                                            ))
-                                        }
-                                    </div>
-                                )}
+                                <div className="flex gap-4 mt-2">
+                                    {
+                                        connectors.filter(c => c.name === 'MetaMask' || c.name === 'WalletConnect').map(connector => (
+                                            <button
+                                                key={connector.uid}
+                                                className="px-6 py-2 bg-gray-700 text-white font-bold rounded-lg text-lg shadow-md hover:bg-gray-600 transition-transform transform hover:scale-105"
+                                                onClick={() => connect({ connector })}
+                                            >
+                                                {connector.name}
+                                            </button>
+                                        ))
+                                    }
+                                </div>
                                 <button
                                     className="w-64 mt-8 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
