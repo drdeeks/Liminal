@@ -6,36 +6,47 @@ interface LiminalBackgroundProps {
 
 export const LiminalBackground: React.FC<LiminalBackgroundProps> = ({ difficulty }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const frameId = useRef<number>();
 
-  const chaosLevel = useMemo(() => Math.min(difficulty / 10, 1), [difficulty]);
+  const chaos = useMemo(() => Math.min(difficulty / 15, 1), [difficulty]);
 
   useEffect(() => {
-    let frameId: number;
+    if (!ref.current) return;
+    
+    const element = ref.current;
+    let lastUpdate = 0;
+    const updateInterval = 50; // Update every 50ms for smooth but efficient animation
+
     const animate = (time: number) => {
-      if (ref.current) {
-        const pulseSpeed = 1 + chaosLevel * 4;
-        const colorShift = time / 1000 * pulseSpeed;
-
-        const baseHue = 200 + Math.sin(colorShift * 0.3) * 60;
-        const accentHue = (baseHue + 180 + Math.sin(colorShift * 0.5) * 90) % 360;
-        const gradientAngle = 45 + Math.sin(colorShift * 0.2) * 45;
-        const saturation = 20 + chaosLevel * 60;
-        const lightness = 15 + Math.sin(colorShift) * 5;
-
-        ref.current.style.background = `linear-gradient(${gradientAngle}deg,
-          hsl(${baseHue}, ${saturation}%, ${lightness}%) 0%,
-          hsl(${baseHue + 30}, ${saturation - 10}%, ${lightness + 5}%) 50%,
-          hsl(${accentHue}, ${saturation}%, ${lightness}%) 100%)`;
+      if (time - lastUpdate < updateInterval) {
+        frameId.current = requestAnimationFrame(animate);
+        return;
       }
-      frameId = requestAnimationFrame(animate);
+      lastUpdate = time;
+
+      const speed = 1 + chaos * 3;
+      const t = time / 1000 * speed;
+
+      const hue1 = 200 + Math.sin(t * 0.3) * (30 + chaos * 60);
+      const hue2 = (hue1 + 120 + Math.sin(t * 0.5) * (60 + chaos * 120)) % 360;
+      const angle = 45 + Math.sin(t * 0.2) * (30 + chaos * 60);
+      const sat = 20 + chaos * 70;
+      const light = 10 + chaos * 15;
+
+      element.style.background = `linear-gradient(${angle}deg,
+        hsl(${hue1}, ${sat}%, ${light}%),
+        hsl(${hue1 + 20}, ${sat - 5}%, ${light + 5}%) 50%,
+        hsl(${hue2}, ${sat + 10}%, ${light + chaos * 10}%))`;
+
+      frameId.current = requestAnimationFrame(animate);
     };
 
-    frameId = requestAnimationFrame(animate);
+    frameId.current = requestAnimationFrame(animate);
 
     return () => {
-      cancelAnimationFrame(frameId);
+      if (frameId.current) cancelAnimationFrame(frameId.current);
     };
-  }, [chaosLevel]);
+  }, [chaos]);
 
-  return <div ref={ref} className="fixed inset-0 overflow-hidden" />;
+  return <div ref={ref} className="fixed inset-0" />;
 };

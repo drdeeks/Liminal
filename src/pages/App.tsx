@@ -5,31 +5,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DirectionCard } from '../components/game/DirectionCard';
 import { CountdownTimer } from '../components/game/CountdownTimer';
 import { StrikesDisplay } from '../components/game/StrikesDisplay';
-
-const HowToPlayScreen = lazy(() => import('../components/screens/HowToPlayScreen').then(module => ({ default: module.HowToPlayScreen })));
-const GameOverScreen = lazy(() => import('../components/screens/GameOverScreen').then(module => ({ default: module.GameOverScreen })));
-const LeaderboardScreen = lazy(() => import('../components/screens/LeaderboardScreen').then(module => ({ default: module.LeaderboardScreen })));
-
-
 import { SparkleController } from '../components/ui/SparkleController';
 import { AtmosphereManager } from '../systems/AtmosphereManager';
 import { LiminalBackground } from '../components/ui/LiminalBackground';
 import { OverlayNoise } from '../components/ui/OverlayNoise';
 import { TemporalBackground } from '../components/ui/TemporalBackground';
+import { SwipeMask } from '../components/ui/SwipeMask';
 import { AudioManager, AudioManagerHandle } from '../systems/AudioManager';
 import { Direction, getRandomDirection, GameState } from '../lib/types';
+import { GAME_CONFIG, ANIMATION, HAPTICS } from '../lib/constants';
 import { base } from 'wagmi/chains';
-import { monadTestnet } from '../lib/contracts';
+import { monadTestnet, contracts } from '../lib/contracts';
 import { parseEther } from 'viem';
-import { contracts } from '../lib/contracts';
 import { ChainSelector } from '../components/ui/ChainSelector';
 
-const INITIAL_STRIKES = 3;
-const CARD_INITIAL_TIME_MS = 2000;
-const CARD_MIN_TIME_MS = 750;
-const SCORE_FOR_MAX_DIFFICULTY = 5000;
+const HowToPlayScreen = lazy(() => import('../components/screens/HowToPlayScreen').then(m => ({ default: m.HowToPlayScreen })));
+const GameOverScreen = lazy(() => import('../components/screens/GameOverScreen').then(m => ({ default: m.GameOverScreen })));
+const LeaderboardScreen = lazy(() => import('../components/screens/LeaderboardScreen').then(m => ({ default: m.LeaderboardScreen })));
 
-const introMessages = [
+const INTRO_MESSAGES = [
     "It knows which way you'll turn before you do.",
     "Some say it remembers every mistake you've ever made.",
     "The deeper you go, the less certain direction becomes.",
@@ -54,16 +48,9 @@ const App: React.FC = () => {
     const { switchChain } = useSwitchChain();
     const { data: hash, error: writeError, isPending, writeContract } = useWriteContract();
     const { data: gmrHash, writeContract: writeGmrContract } = useWriteContract();
-    const { data: resetStrikesHash, writeContract: writeResetStrikesContract } = useWriteContract();
+    const { data: resetStrikesHash, writeContract: writeResetStrikesContract, isPending: isResetStrikesPending } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
-    const { isSuccess: isResetStrikesSuccess } = useWaitForTransactionReceipt({ hash: resetStrikesHash });
-
-    useEffect(() => {
-        if (isResetStrikesSuccess) {
-            setStrikes(INITIAL_STRIKES);
-            setGameState('playing');
-        }
-    }, [isResetStrikesSuccess]);
+    const { isSuccess: isResetStrikesSuccess, isLoading: isResetStrikesConfirming } = useWaitForTransactionReceipt({ hash: resetStrikesHash });
 
     const audioManager = useRef<AudioManagerHandle>(null);
 
@@ -74,16 +61,9 @@ const App: React.FC = () => {
         chainId: base.id,
     });
 
-    useEffect(() => {
-        if (ethPriceData) {
-            console.log('ethPriceData', ethPriceData);
-        }
-    }, [ethPriceData]);
-
     const [gameState, setGameState] = useState<GameState>('menu');
     const [score, setScore] = useState(0);
-    const [strikes, setStrikes] = useState(INITIAL_STRIKES);
-    const [highScore, setHighScore] = useState(0);
+    const [strikes, setStrikes] = useState<number>(GAME_CONFIG.INITIAL_STRIKES);
     const [gameStartTime, setGameStartTime] = useState<number | null>(null);
     const [currentDirection, setCurrentDirection] = useState(getRandomDirection());
     const [isJoker, setIsJoker] = useState(false);
@@ -92,11 +72,9 @@ const App: React.FC = () => {
     const [flash, setFlash] = useState(false);
     const [sparkle, setSparkle] = useState(false);
     const [keyboardSwipeOutDirection, setKeyboardSwipeOutDirection] = useState<Direction | null>(null);
-    const [multiplier, setMultiplier] = useState(1);
-    const [cardTimerId, setCardTimerId] = useState<NodeJS.Timeout | null>(null);
+    const [cardTimerId] = useState(() => ({ current: null as NodeJS.Timeout | null }));
     const [entranceState, setEntranceState] = useState<'idle' | 'sentence' | 'dimming' | 'countdown'>('idle');
-    const [entranceCountdown, setEntranceCountdown] = useState(3);
-    const [showConnectors, setShowConnectors] = useState(false);
+    const [entranceCountdown, setEntranceCountdown] = useState(GAME_CONFIG.CONTINUE_COUNTDOWN_SECONDS);
     const [activeChain, setActiveChain] = useState(chain);
     const [introMessage, setIntroMessage] = useState('');
     const [isScoreSubmitted, setIsScoreSubmitted] = useState(false);
@@ -123,7 +101,7 @@ const App: React.FC = () => {
             }
         };
         loadSdk();
-    }, [isSdkLoaded]);
+    }, []);
 
     useEffect(() => {
         if (chain) {
@@ -132,49 +110,52 @@ const App: React.FC = () => {
     }, [chain]);
 
     const currentCardTimeLimit = useMemo(() => {
-        const progress = Math.min(score / SCORE_FOR_MAX_DIFFICULTY, 1);
-        return CARD_INITIAL_TIME_MS - (progress * (CARD_INITIAL_TIME_MS - CARD_MIN_TIME_MS));
+        const progress = Math.min(score / GAME_CONFIG.SCORE_FOR_MAX_DIFFICULTY, 1);
+        return GAME_CONFIG.CARD_INITIAL_TIME_MS - (progress * (GAME_CONFIG.CARD_INITIAL_TIME_MS - GAME_CONFIG.CARD_MIN_TIME_MS));
     }, [score]);
 
     const handleGenerateNewCard = useCallback(() => {
-        if (cardTimerId) {
-            clearTimeout(cardTimerId);
+        if (cardTimerId.current) {
+            clearTimeout(cardTimerId.current);
         }
-        const isJokerCard = Math.random() < 0.25;
+        const isJokerCard = Math.random() < GAME_CONFIG.JOKER_PROBABILITY;
         setIsJoker(isJokerCard);
         setCurrentDirection(getRandomDirection());
         setCardKey(prev => prev + 1);
         setKeyboardSwipeOutDirection(null);
-        setGameStartTime(performance.now()); // Set gameStartTime when a new card is generated
+        setGameStartTime(performance.now());
         
         if (gameState === 'playing') {
             const timer = setTimeout(() => {
                 handleIncorrectSwipe();
             }, currentCardTimeLimit);
-            setCardTimerId(timer);
+            cardTimerId.current = timer;
         }
-    }, [cardTimerId, currentCardTimeLimit, gameState]);
+    }, [currentCardTimeLimit, gameState]);
 
     const handleCorrectSwipe = useCallback(() => {
-        if (cardTimerId) clearTimeout(cardTimerId);
+        if (cardTimerId.current) clearTimeout(cardTimerId.current);
         setScore(prev => prev + 1);
         setSparkle(true);
         audioManager.current?.playCorrectSwipe();
         handleGenerateNewCard();
-    }, [cardTimerId, handleGenerateNewCard]);
+    }, [handleGenerateNewCard]);
 
     const handleIncorrectSwipe = useCallback(() => {
-        if (cardTimerId) clearTimeout(cardTimerId);
+        if (cardTimerId.current) clearTimeout(cardTimerId.current);
         setStrikes(prev => prev - 1);
         setShake(true);
         if (gameState === 'playing') {
             setFlash(true);
-            setTimeout(() => setFlash(false), 300);
+            if (navigator.vibrate) {
+                navigator.vibrate(HAPTICS.INCORRECT);
+            }
+            setTimeout(() => setFlash(false), ANIMATION.FLASH_DURATION);
         }
         audioManager.current?.playWrongSwipe();
-        setTimeout(() => setShake(false), 500);
+        setTimeout(() => setShake(false), ANIMATION.SHAKE_DURATION);
         handleGenerateNewCard();
-    }, [cardTimerId, handleGenerateNewCard, gameState]);
+    }, [handleGenerateNewCard, gameState]);
 
     const startGame = () => {
         setGameState('howToPlay');
@@ -182,9 +163,10 @@ const App: React.FC = () => {
 
     const handlePlayNow = () => {
         setScore(0);
-        setStrikes(INITIAL_STRIKES);
-        const randomIndex = Math.floor(Math.random() * introMessages.length);
-        setIntroMessage(introMessages[randomIndex]);
+        setStrikes(GAME_CONFIG.INITIAL_STRIKES);
+        setIsScoreSubmitted(false);
+        const randomIndex = Math.floor(Math.random() * INTRO_MESSAGES.length);
+        setIntroMessage(INTRO_MESSAGES[randomIndex]);
         setEntranceState('sentence');
     };
 
@@ -195,7 +177,7 @@ const App: React.FC = () => {
 
     const handlePlayAgain = () => {
         setScore(0);
-        setStrikes(INITIAL_STRIKES);
+        setStrikes(GAME_CONFIG.INITIAL_STRIKES);
         setIsScoreSubmitted(false);
         startGame();
     };
@@ -212,7 +194,7 @@ const App: React.FC = () => {
         if (!address || !activeChain) return;
         const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
         if (!contractConfig.address) {
-            console.error(`No GMR contract address found for chain ID ${chain.id}`);
+            console.error(`No GMR contract address found for chain ID ${activeChain.id}`);
             return;
         }
 
@@ -230,17 +212,32 @@ const App: React.FC = () => {
         if (!address || !activeChain) return;
         const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
         if (!contractConfig.address) {
-            console.error(`No ResetStrikes contract address found for chain ID ${chain.id}`);
+            console.error(`No ResetStrikes contract address found for chain ID ${activeChain.id}`);
             return;
         }
 
         let txValue = 0n;
-        if (chain.id === base.id && ethPriceData) {
-            const [, price, , ,] = ethPriceData as [bigint, bigint, bigint, bigint, bigint];
-            const ethPriceInUsd = Number(price) / 1e8;
-            const costInUsd = 0.05;
-            const costInEth = costInUsd / ethPriceInUsd;
-            txValue = parseEther(costInEth.toString());
+        if (activeChain.id === base.id && ethPriceData) {
+            try {
+                const [, price, , ,] = ethPriceData as [bigint, bigint, bigint, bigint, bigint];
+                if (!price || price <= 0n) {
+                    console.error('Invalid ETH price data');
+                    return;
+                }
+                const ethPriceInUsd = Number(price) / 1e8;
+                const costInUsd = 0.05;
+                const costInEth = costInUsd / ethPriceInUsd;
+                
+                if (!isFinite(costInEth) || costInEth <= 0) {
+                    console.error('Invalid cost calculation');
+                    return;
+                }
+                
+                txValue = parseEther(costInEth.toString());
+            } catch (error) {
+                console.error('Failed to calculate transaction value:', error);
+                return;
+            }
         }
 
         writeResetStrikesContract({
@@ -254,18 +251,25 @@ const App: React.FC = () => {
         });
     };
 
+    const handleContinue = () => {
+        setStrikes(GAME_CONFIG.INITIAL_STRIKES);
+        setGameState('playing');
+        handleGenerateNewCard();
+    };
+
     const handleSubmitScore = useCallback(() => {
-        console.log('handleSubmitScore called');
         if (!address || !activeChain) {
-            console.log('handleSubmitScore: Missing address or chain', { address, chain: activeChain });
+            return;
+        }
+        if (!Number.isInteger(score) || score < 0) {
+            console.error('Invalid score value:', score);
             return;
         }
         const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
         if (!contractConfig.address) {
-            console.error(`No leaderboard contract address found for chain ID ${chain.id}`);
+            console.error(`No leaderboard contract address found for chain ID ${activeChain.id}`);
             return;
         }
-        console.log('handleSubmitScore: Submitting score', { score, contractConfig });
 
         writeContract({
             address: contractConfig.address,
@@ -278,20 +282,6 @@ const App: React.FC = () => {
     }, [address, activeChain, score, writeContract]);
 
     useEffect(() => {
-        const storedHighScore = localStorage.getItem('highScore');
-        if (storedHighScore) {
-            setHighScore(parseInt(storedHighScore, 10));
-        }
-    }, []);
-
-    useEffect(() => {
-        if (gameState === 'gameOver' && score > highScore) {
-            setHighScore(score);
-            localStorage.setItem('highScore', score.toString());
-        }
-    }, [gameState, score, highScore]);
-
-    useEffect(() => {
         if (gameState === 'gameOver') {
             setFlash(false);
         }
@@ -301,35 +291,32 @@ const App: React.FC = () => {
         if (entranceState === 'sentence') {
             const timer = setTimeout(() => {
                 setEntranceState('dimming');
-            }, 3000); // Display sentence for 3 seconds
+            }, ANIMATION.ENTRANCE_SENTENCE_DURATION);
             return () => clearTimeout(timer);
         } else if (entranceState === 'dimming') {
-            setEntranceCountdown(3);
+            setEntranceCountdown(GAME_CONFIG.CONTINUE_COUNTDOWN_SECONDS);
             const countdownInterval = setInterval(() => {
                 setEntranceCountdown(prev => {
                     if (prev - 1 <= 0) {
-                        clearInterval(countdownInterval);
                         setEntranceState('idle');
                         setGameState('playing');
-                        setFlash(true); // Trigger neon flash on game start
-                        setTimeout(() => setFlash(false), 300); // Reset flash after 300ms
-                        handleGenerateNewCard(); // Start the game automatically
+                        handleGenerateNewCard();
                         return 0;
                     }
                     return prev - 1;
                 });
-            }, 1000);
+            }, ANIMATION.COUNTDOWN_INTERVAL);
             return () => clearInterval(countdownInterval);
         }
-    }, [entranceState]);
+    }, [entranceState, handleGenerateNewCard]);
 
     useEffect(() => {
         return () => {
-            if (cardTimerId) {
-                clearTimeout(cardTimerId);
+            if (cardTimerId.current) {
+                clearTimeout(cardTimerId.current);
             }
         };
-    }, [gameState, cardTimerId]);
+    }, [cardTimerId]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -401,51 +388,52 @@ const App: React.FC = () => {
             case 'gameOver':
                 return <GameOverScreen
                     score={score}
-                    highScore={highScore}
                     onPlayAgain={handlePlayAgain}
                     onViewLeaderboard={handleViewLeaderboard}
                     onSubmitScore={handleSubmitScore}
                     isSubmitting={isPending || isConfirming}
-                    isSuccess={isConfirmed}
                     error={writeError}
                     onResetStrikes={handleResetStrikes}
+                    onContinue={handleContinue}
                     isScoreSubmitted={isScoreSubmitted}
+                    isResetStrikesSuccess={isResetStrikesSuccess}
+                    isResetStrikesPending={isResetStrikesPending || isResetStrikesConfirming}
                 />;
             case 'leaderboard':
                 return <LeaderboardScreen onBack={handleBackToMenu} />;
             case 'menu':
             default:
                 return (
-                    <div className="flex flex-col items-center justify-center h-full">
-                        <h1 className="text-6xl font-bold text-white mb-8 title-shadow">Liminal</h1>
+                    <div className="flex flex-col items-center justify-center h-full px-4">
+                        <h1 className="text-5xl sm:text-7xl font-bold text-white mb-12 title-shadow animate-fade-in">Liminal</h1>
                         {isConnected ? (
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center w-full max-w-md">
                                 <button
-                                    className="w-64 px-8 py-4 bg-green-500 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105 mb-4"
                                     onClick={startGame}
                                 >
                                     Start Game
                                 </button>
                                 <button
-                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg text-2xl shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
                                 >
                                     Leaderboard
                                 </button>
                                 <button
-                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded-lg text-2xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all transform hover:scale-105 mb-4"
                                     onClick={handleGm}
                                 >
                                     Say GM
                                 </button>
-                                <div className="mt-8">
+                                <div className="mt-8 w-full">
                                     <ChainSelector activeChain={activeChain} switchChain={switchChain} />
                                 </div>
                             </div>
                         ) : (
-                            <div className="relative flex flex-col items-center">
+                            <div className="flex flex-col items-center w-full max-w-md">
                                 <button
-                                    className="w-64 px-8 py-4 bg-purple-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded-lg text-2xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all transform hover:scale-105 mb-4"
                                     onClick={() => {
                                         const farcasterConnector = connectors.find(c => c.name === 'Injected' || c.name === 'Farcaster');
                                         const metaMaskConnector = connectors.find(c => c.name === 'MetaMask');
@@ -462,13 +450,13 @@ const App: React.FC = () => {
                                         }
                                     }}
                                 >
-                                    Connect wallet
+                                    Connect Wallet
                                 </button>
                                 <button
-                                    className="w-64 px-8 py-4 bg-blue-600 text-white font-bold rounded-lg text-2xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 mb-4"
+                                    className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg text-2xl shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 mb-4"
                                     onClick={handleViewLeaderboard}
                                 >
-                                    Leaderboard
+                                    View Leaderboard
                                 </button>
                             </div>
                         )}
@@ -477,62 +465,75 @@ const App: React.FC = () => {
         }
     };
 
-    const gameIntensity = useMemo(() => {
-        return Math.min(score / 750, 1);
-    }, [score]);
+    const chaos = useMemo(() => Math.min(score / 750, 1), [score]);
 
     return (
-        <main className={`w-screen h-screen overflow-hidden ${shake ? 'animate-shake' : ''} pt-24`}>
-            <LiminalBackground difficulty={1 + gameIntensity * 14} />
-            <OverlayNoise intensity={gameIntensity * 100} />
-            <TemporalBackground phase={gameIntensity * 7} intensity={gameIntensity * 100} />
-            <AtmosphereManager score={score} />
-            <SparkleController on={sparkle} onComplete={() => setSparkle(false)} />
-            <AudioManager ref={audioManager} isMusicMuted={false} isSfxMuted={false} multiplier={gameIntensity} onMilestone={() => {}} stage={gameIntensity * 5} />
+        <SwipeMask>
+            <main className={`w-screen h-screen overflow-hidden ${shake ? 'animate-shake' : ''} pt-24`}>
+                <LiminalBackground difficulty={1 + chaos * 14} />
+                <TemporalBackground phase={chaos * 7} intensity={chaos * 100} />
+                <OverlayNoise intensity={chaos * 100} />
+                <AtmosphereManager score={score} />
+                <SparkleController on={sparkle} onComplete={() => setSparkle(false)} />
+                <AudioManager ref={audioManager} isMusicMuted={false} isSfxMuted={false} multiplier={chaos} onMilestone={() => {}} stage={chaos * 5} />
 
-            {flash && <div className="absolute inset-0 z-50 animate-flash-neon pointer-events-none"></div>}
+                {flash && <div className="absolute inset-0 z-50 animate-flash-neon pointer-events-none" />}
 
             <div className="absolute top-0 left-0 right-0 p-4 z-10">
-                <div className="flex justify-between items-center text-white text-2xl font-bold bg-black/20 p-3 rounded-lg border-2 border-white/20 backdrop-blur-sm w-full">
-                <div className="text-shadow-pop">
-                    <span className="text-white/70 text-lg font-semibold">SCORE</span>
-                    <p data-testid="score">{score}</p>
+                <div className="flex justify-between items-center text-white text-2xl font-bold bg-black/30 p-4 rounded-lg border-2 border-white/20 backdrop-blur-md w-full max-w-6xl mx-auto">
+                    <div className="text-shadow-pop flex-1">
+                        <span className="text-white/70 text-lg font-semibold block">SCORE</span>
+                        <p data-testid="score" className="text-3xl">{score}</p>
                     </div>
-                    <div className="flex-grow flex justify-center">
-                        <CountdownTimer
-                            startTime={gameStartTime}
-                            duration={currentCardTimeLimit}
-                            onTimesUp={handleIncorrectSwipe}
-                            gameState={gameState}
-                        />
+                    <div className="flex-1 flex justify-center">
+                        {gameState === 'playing' && (
+                            <CountdownTimer
+                                startTime={gameStartTime}
+                                duration={currentCardTimeLimit}
+                                onTimesUp={handleIncorrectSwipe}
+                                gameState={gameState}
+                            />
+                        )}
                     </div>
-                                    <div className="text-shadow-pop text-right">
-                                        {isConnected ? (
-                                            <div className="flex flex-col items-end">
-                                                <span className="text-white/70 text-lg font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-                                                <button
-                                                    className="text-white/50 hover:text-white transition-colors text-sm"
-                                                    onClick={() => disconnect()}
-                                                >
-                                                    (Disconnect)
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-end">
-                                                <span className="text-white/70 text-lg font-semibold">MULTIPLIER</span>
-                                                <p>{multiplier}x</p>
-                                            </div>
-                                        )}
-                                    </div>                </div>
-                <div className="absolute left-1/2 -translate-x-1/2 mt-2">
-                    {gameState === 'playing' && <StrikesDisplay key={gameState} strikes={strikes} />}
+                    <div className="text-shadow-pop text-right flex-1">
+                        {isConnected && address ? (
+                            <div className="flex flex-col items-end gap-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-white/50">{activeChain?.name || 'Unknown'}</span>
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                </div>
+                                <span className="text-white/90 text-sm font-mono">{address.slice(0, 6)}...{address.slice(-4)}</span>
+                                <button
+                                    className="text-white/50 hover:text-white transition-colors text-xs"
+                                    onClick={() => disconnect()}
+                                >
+                                    Disconnect
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-end">
+                                <span className="text-white/70 text-lg font-semibold block">STRIKES</span>
+                                <p className="text-3xl">{strikes}/{GAME_CONFIG.INITIAL_STRIKES}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
+                {gameState === 'playing' && (
+                    <div className="flex justify-center mt-3">
+                        <StrikesDisplay strikes={strikes} />
+                    </div>
+                )}
             </div>
 
-            <Suspense fallback={<div>Loading...</div>}>
+            <Suspense fallback={
+                <div className="flex items-center justify-center h-full">
+                    <div className="text-white text-2xl font-bold animate-pulse">Loading...</div>
+                </div>
+            }>
                 {renderGameState()}
             </Suspense>
         </main>
+        </SwipeMask>
     );
 };
 

@@ -15,9 +15,11 @@ foundry.lock
 # Build artifacts
 dist
 dist-ssr
+*.tsbuildinfo
 
 # Local environment files
 .env*
+!.env.example
 
 # Editor directories and files
 .vscode/
@@ -34,21 +36,30 @@ dist-ssr
 broadcast/
 contracts/out/
 contracts/cache/
+contracts/lib/
 
 # Keystore
 /keystores/
+*.keystore
 
 # Test results
 /test-results/
+/playwright-report/
+/coverage/
 
-# Informational Docs (except root README.md)
-*.md
-!/README.md
-!/contracts/script/README.updated.md
+# Documentation (keep only essential)
+IMPROVEMENTS.md
+ARCHITECTURE.md
+TESTING.md
+RESET_STRIKES_IMPLEMENTATION.md
+VISUAL_GUIDE.md
+REFACTORING_SUMMARY.md
+QUICK_REFERENCE.md
+CHAOS_VISUAL_GUIDE.md
+CLEANUP.md
 
 # Development
 jules-scratch/
 before-assertion.png
-foundry.lock
-package-lock.json.bak
-playwright.config.ts
+*.bak
+.cache/

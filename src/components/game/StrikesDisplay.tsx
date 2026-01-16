@@ -7,15 +7,17 @@ interface StrikesDisplayProps {
 const MAX_STRIKES = 3;
 
 export const StrikesDisplay: React.FC<StrikesDisplayProps> = ({ strikes }) => {
-  if (strikes === MAX_STRIKES) {
-    return null; // Initially invisible
+  const strikesUsed = MAX_STRIKES - strikes;
+  
+  if (strikesUsed === 0) {
+    return null;
   }
 
   return (
-    <div className="flex space-x-2">
-      {Array.from({ length: MAX_STRIKES }).map((_, i) => (
-        <span key={i} className={`text-4xl font-bold transition-opacity duration-300 ${i < (MAX_STRIKES - strikes) ? 'text-red-500 opacity-100' : 'opacity-0'}`}>
-          X
+    <div className="flex space-x-3 animate-fade-in">
+      {Array.from({ length: strikesUsed }).map((_, i) => (
+        <span key={i} className="text-5xl font-bold text-red-500 drop-shadow-lg animate-pulse">
+          ✗
         </span>
       ))}
     </div>

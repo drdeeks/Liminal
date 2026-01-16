@@ -5,22 +5,30 @@ import './index.css';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from './lib/wagmi';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-const queryClient = new QueryClient();
-
-console.log('Main.tsx loaded');
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5000,
+    },
+  },
+});
 
 const rootElement = document.getElementById('root');
-console.log('Root element:', rootElement);
 
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </WagmiProvider>
+      <ErrorBoundary>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
+        </WagmiProvider>
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 } else {

@@ -32,31 +32,53 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
 
     const contractAddress = chain?.id === monadTestnet.id ? leaderboardAddress[monadTestnet.id] : leaderboardAddress[base.id];
 
-    const { data: playerCountData, isLoading: isPlayerCountLoading } = useReadContract({
+    const { data: playerCountData, isLoading: isPlayerCountLoading, error: playerCountError } = useReadContract({
         address: contractAddress,
         abi: leaderboardAbi,
         functionName: 'getPlayerCount',
+        query: { enabled: !!contractAddress },
     });
 
-    const { data: leaderboardData, isLoading: isLeaderboardLoading } = useReadContract({
+    const { data: leaderboardData, isLoading: isLeaderboardLoading, error: leaderboardError } = useReadContract({
         address: contractAddress,
         abi: leaderboardAbi,
         functionName: 'getLeaderboard',
         args: [BigInt(page), BigInt(PAGE_SIZE)],
+        query: { enabled: !!contractAddress },
     });
 
     const playerCount = playerCountData ? Number(playerCountData) : 0;
-    const leaderboard: Player[] = leaderboardData ? (leaderboardData as [string[], bigint[]])[0].map((address, i) => ({
-        address,
-        score: Number((leaderboardData as [string[], bigint[]])[1][i]),
-    })).sort((a, b) => b.score - a.score) : [];
+    const leaderboard: Player[] = leaderboardData ? (() => {
+        const [addresses, scores] = leaderboardData as [string[], bigint[]];
+        if (addresses.length !== scores.length) {
+            console.error('Leaderboard data mismatch: addresses and scores arrays have different lengths');
+            return [];
+        }
+        return addresses.map((address, i) => {
+            const score = scores[i];
+            if (score > Number.MAX_SAFE_INTEGER) {
+                console.warn(`Score ${score} exceeds MAX_SAFE_INTEGER, precision may be lost`);
+            }
+            return {
+                address,
+                score: Number(score),
+            };
+        }).sort((a, b) => b.score - a.score);
+    })() : [];
 
     const loading = isPlayerCountLoading || isLeaderboardLoading;
+    const error = playerCountError || leaderboardError;
 
     return (
-        <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in w-full max-w-4xl mx-auto">
-            <h1 className="text-6xl font-black mb-8 text-glitter">Leaderboard</h1>
-            <div className="w-full bg-black/20 border-2 border-white/20 backdrop-blur-sm rounded-lg p-6">
+        <div className="flex flex-col items-center justify-center text-white text-center animate-fade-in w-full max-w-4xl mx-auto px-4">
+            <h1 className="text-4xl sm:text-6xl font-black mb-8 text-glitter">Leaderboard</h1>
+            {error && (
+                <div className="w-full bg-red-900/50 border-2 border-red-500 text-red-200 p-4 rounded-lg mb-4">
+                    <p className="font-bold">Error loading leaderboard</p>
+                    <p className="text-sm">{error.message}</p>
+                </div>
+            )}
+            <div className="w-full bg-black/30 border-2 border-white/20 backdrop-blur-md rounded-lg p-6">
                 {loading ? (
                     <div>
                         {[...Array(PAGE_SIZE)].map((_, i) => <SkeletonCard key={i} />)}
@@ -78,24 +100,24 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
                 <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0 || loading}
-                    className="bg-black/20 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-black/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-black/30 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-black/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                     Previous
                 </button>
-                <p className="text-white/50">Page {page + 1}</p>
+                <p className="text-white/70 font-semibold">Page {page + 1}</p>
                 <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={(page + 1) * PAGE_SIZE >= playerCount || loading}
-                    className="bg-black/20 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-black/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-black/30 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-black/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                     Next
                 </button>
             </div>
             <button
                 onClick={onBack}
-                className="mt-8 bg-black/20 text-white font-bold py-3 px-8 rounded-lg text-2xl shadow-lg hover:bg-black/40 transform hover:scale-105 transition-transform border-2 border-white/20 backdrop-blur-sm text-shadow-pop"
+                className="mt-8 bg-black/30 text-white font-bold py-3 px-8 rounded-lg text-2xl shadow-lg hover:bg-black/50 transform hover:scale-105 transition-all border-2 border-white/20 backdrop-blur-md text-shadow-pop"
             >
-                Back
+                Back to Menu
             </button>
         </div>
     );

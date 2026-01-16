@@ -1,103 +1,100 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 
 interface OverlayNoiseProps {
   intensity: number;
 }
 
 export const OverlayNoise: React.FC<OverlayNoiseProps> = ({ intensity }) => {
-  const frameId = useRef<number | null>(null);
-  const [scanlineY, setScanlineY] = useState(0);
+  const scanRef = useRef<HTMLDivElement>(null);
+  const frameId = useRef<number>();
 
-  const animate = () => {
-    setScanlineY(y => (y + 1) % window.innerHeight);
-    frameId.current = requestAnimationFrame(animate);
-  };
+  const chaos = useMemo(() => Math.min(intensity / 100, 1), [intensity]);
 
   useEffect(() => {
-    if (intensity > 0) {
-      frameId.current = requestAnimationFrame(animate);
-    } else {
-      if (frameId.current) {
-        cancelAnimationFrame(frameId.current);
-        frameId.current = null;
+    if (intensity === 0 || !scanRef.current) return;
+
+    let y = 0;
+    let lastUpdate = 0;
+    const updateInterval = 16; // ~60fps
+
+    const animate = (time: number) => {
+      if (time - lastUpdate < updateInterval) {
+        frameId.current = requestAnimationFrame(animate);
+        return;
       }
-    }
+      lastUpdate = time;
+
+      y = (y + 2) % window.innerHeight;
+      if (scanRef.current) {
+        scanRef.current.style.transform = `translateY(${y}px)`;
+      }
+
+      frameId.current = requestAnimationFrame(animate);
+    };
+
+    frameId.current = requestAnimationFrame(animate);
 
     return () => {
-      if (frameId.current) {
-        cancelAnimationFrame(frameId.current);
-      }
+      if (frameId.current) cancelAnimationFrame(frameId.current);
     };
   }, [intensity]);
 
-  const normalizedIntensity = Math.min(intensity / 100, 1);
-  const noiseOpacity = normalizedIntensity * 0.12;
-  const vignetteIntensity = normalizedIntensity * 0.35;
-  const pixelationAmount = intensity > 85 ? Math.floor(normalizedIntensity * 4) : 0;
+  if (intensity === 0) return null;
+
+  const noiseOpacity = chaos * 0.15;
+  const vignetteOpacity = chaos * 0.45;
+  const gridOpacity = Math.max(0, (chaos - 0.5) * 0.3);
+  const distortionBlur = chaos > 0.85 ? Math.floor(chaos * 5) : 0;
 
   return (
-    <>
+    <div className="fixed inset-0 pointer-events-none z-40">
+      {/* Scanlines */}
       <div
-        className="fixed inset-0 pointer-events-none z-40"
+        ref={scanRef}
         style={{
-          background: `
-            repeating-linear-gradient(
-              0deg,
-              rgba(0, 0, 0, 0.15) 0px,
-              rgba(0, 0, 0, 0) 1px,
-              rgba(0, 0, 0, 0) 2px,
-              rgba(0, 0, 0, 0.15) 3px
-            )
-          `,
+          position: 'absolute',
+          inset: 0,
+          background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.2) 3px)',
           opacity: noiseOpacity,
-          transform: `translateY(${scanlineY}px)`,
         }}
       />
 
+      {/* Vignette */}
       <div
-        className="fixed inset-0 pointer-events-none z-40"
         style={{
-          background: `radial-gradient(circle, transparent 50%, rgba(0, 0, 0, ${vignetteIntensity}) 100%)`,
+          position: 'absolute',
+          inset: 0,
+          background: `radial-gradient(circle, transparent 40%, rgba(0,0,0,${vignetteOpacity}) 100%)`,
         }}
       />
 
-      {intensity > 50 && (
+      {/* Grid overlay */}
+      {chaos > 0.5 && (
         <div
-          className="fixed inset-0 pointer-events-none z-40"
           style={{
-            opacity: Math.min((intensity - 50) * 0.003, 0.15),
-            background: 'rgba(0, 0, 0, 0.1)',
+            position: 'absolute',
+            inset: 0,
+            opacity: gridOpacity,
             backgroundImage: `
-              repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 1px,
-                rgba(255, 255, 255, 0.03) 1px,
-                rgba(255, 255, 255, 0.03) 2px
-              ),
-              repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 1px,
-                rgba(255, 255, 255, 0.03) 1px,
-                rgba(255, 255, 255, 0.03) 2px
-              )
+              repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.05) 1px, rgba(255,255,255,0.05) 2px),
+              repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.05) 1px, rgba(255,255,255,0.05) 2px)
             `,
-            backgroundSize: '2px 2px',
+            backgroundSize: '3px 3px',
           }}
         />
       )}
 
-      {intensity > 85 && (
+      {/* Distortion */}
+      {chaos > 0.85 && (
         <div
-          className="fixed inset-0 pointer-events-none z-40"
           style={{
-            opacity: 0.3,
-            filter: `blur(${pixelationAmount}px)`,
-            backdropFilter: `blur(${pixelationAmount}px)`,
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.4,
+            backdropFilter: `blur(${distortionBlur}px) contrast(${1 + chaos * 0.3})`,
           }}
         />
       )}
-    </>
+    </div>
   );
 };

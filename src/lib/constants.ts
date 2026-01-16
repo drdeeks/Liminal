@@ -1,0 +1,47 @@
+// Game Configuration
+export const GAME_CONFIG = {
+  INITIAL_STRIKES: 3,
+  CARD_INITIAL_TIME_MS: 1500,
+  CARD_MIN_TIME_MS: 450,
+  SCORE_FOR_MAX_DIFFICULTY: 5000,
+  JOKER_PROBABILITY: 0.25,
+  RESET_STRIKES_COST_USD: 0.05,
+  CONTINUE_COUNTDOWN_SECONDS: 3,
+} as const;
+
+// Difficulty Scaling
+export const DIFFICULTY = {
+  BACKGROUND_MULTIPLIER: 15,
+  ATMOSPHERE_DIVISOR: 750,
+  MAX_CHAOS: 1,
+} as const;
+
+// Animation Timings
+export const ANIMATION = {
+  CARD_SWIPE_DURATION: 300,
+  FLASH_DURATION: 200,
+  SHAKE_DURATION: 500,
+  INCORRECT_FLASH_DURATION: 400,
+  ENTRANCE_SENTENCE_DURATION: 3000,
+  COUNTDOWN_INTERVAL: 1000,
+} as const;
+
+// Input Thresholds
+export const INPUT = {
+  DISTANCE_THRESHOLD: 50,
+  VELOCITY_THRESHOLD: 0.4,
+  MIN_SWIPE_DURATION: 50,
+} as const;
+
+// Haptic Patterns
+export const HAPTICS = {
+  CORRECT: [50] as number[],
+  INCORRECT: [100, 50, 100, 50, 100] as number[],
+} as const;
+
+// Background Update Intervals
+export const PERFORMANCE = {
+  BACKGROUND_UPDATE_MS: 50,
+  SCANLINE_UPDATE_MS: 16,
+  TIMER_UPDATE_MS: 16,
+} as const;
