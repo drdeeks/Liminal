@@ -435,18 +435,11 @@ const App: React.FC = () => {
                                 <button
                                     className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded-lg text-2xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all transform hover:scale-105 mb-4"
                                     onClick={() => {
-                                        const farcasterConnector = connectors.find(c => c.name === 'Injected' || c.name === 'Farcaster');
-                                        const metaMaskConnector = connectors.find(c => c.name === 'MetaMask');
-                                        const walletConnectConnector = connectors.find(c => c.name === 'WalletConnect');
-
-                                        if (farcasterConnector) {
-                                            connect({ connector: farcasterConnector });
-                                        } else if (metaMaskConnector) {
-                                            connect({ connector: metaMaskConnector });
-                                        } else if (walletConnectConnector) {
-                                            connect({ connector: walletConnectConnector });
+                                        const connector = connectors[0];
+                                        if (connector) {
+                                            connect({ connector });
                                         } else {
-                                            console.warn("No suitable wallet connector found.");
+                                            console.warn("No wallet connector available.");
                                         }
                                     }}
                                 >
