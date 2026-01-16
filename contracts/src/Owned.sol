@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-/// @notice Simple single owner authorization mixin.
-/// @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/auth/Owned.sol)
+import {Errors} from "./Errors.sol";
+
+/// @notice Simple single owner authorization mixin with two-step transfer.
+/// @author Modified from Solmate (https://github.com/transmissions11/solmate/blob/main/src/auth/Owned.sol)
 abstract contract Owned {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event OwnershipTransferred(address indexed user, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /*//////////////////////////////////////////////////////////////
                             OWNERSHIP STORAGE
     //////////////////////////////////////////////////////////////*/
 
     address public owner;
+    address public pendingOwner;
 
     modifier onlyOwner() virtual {
-        require(msg.sender == owner, "UNAUTHORIZED");
-
+        if (msg.sender != owner) revert Errors.Unauthorized();
         _;
     }
 
@@ -27,8 +30,8 @@ abstract contract Owned {
     //////////////////////////////////////////////////////////////*/
 
     constructor(address _owner) {
+        if (_owner == address(0)) revert Errors.InvalidOwner();
         owner = _owner;
-
         emit OwnershipTransferred(address(0), _owner);
     }
 
@@ -37,8 +40,22 @@ abstract contract Owned {
     //////////////////////////////////////////////////////////////*/
 
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        owner = newOwner;
+        if (newOwner == address(0)) revert Errors.InvalidOwner();
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
 
-        emit OwnershipTransferred(msg.sender, newOwner);
+    function acceptOwnership() public virtual {
+        if (msg.sender != pendingOwner) revert Errors.Unauthorized();
+        address oldOwner = owner;
+        owner = pendingOwner;
+        delete pendingOwner;
+        emit OwnershipTransferred(oldOwner, owner);
+    }
+
+    function renounceOwnership() public virtual onlyOwner {
+        owner = address(0);
+        delete pendingOwner;
+        emit OwnershipTransferred(msg.sender, address(0));
     }
 }

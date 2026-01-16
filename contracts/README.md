@@ -1,53 +1,47 @@
 # Smart Contracts
 
-This directory contains the smart contracts for the Liminal Farcaster mini app game.
+Smart contracts for the Liminal Farcaster mini app.
 
 ## Contracts
 
-- **GMR**: Main game token contract
-- **Leaderboard**: Player leaderboard tracking
-- **ResetStrikes**: Strike reset mechanism with Chainlink price feed integration
+- **GMR** - Game marker contract
+- **Leaderboard** - Player score tracking
+- **ResetStrikes** - Paid power-up with Chainlink price feeds
 
-## Setup
-
-### 1. Install Foundry
-
-Install [Foundry](https://getfoundry.sh/):
-```bash
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
-```
-
-### 2. Install Dependencies
+## Quick Start
 
 ```bash
+# Install dependencies
 forge install
+
+# Run tests
+forge test
+
+# Deploy
+forge script script/DeploySimple.s.sol:DeploySimple \
+  --rpc-url $BASE_RPC_URL \
+  --keystore ~/.foundry/keystores/<keystore> \
+  --broadcast \
+  --verify
 ```
 
-### 3. Configure Environment Variables
+## Documentation
 
-Create a `.env` file in the contracts directory:
+See **[../CONTRACTS.md](../CONTRACTS.md)** for complete documentation including:
+- Architecture details
+- Security considerations
+- Gas optimization
+- Testing guide
+- Deployment procedures
 
-```bash
-# RPC URLs for your networks
-MONAD_RPC_URL="https://testnet-rpc.monad.xyz"
-BASE_RPC_URL="https://mainnet.base.org"
-BASE_SEPOLIA_RPC_URL="https://sepolia.base.org"
+## Deployed Addresses
 
-# Keystore Config
-FOUNDRY_KEYSTORES_PATH="C:\Dev\Projects\Liminal-G\Liminal-gamma\contracts\keystore"
-KEYSTORE_PASSWORD="your_secure_password"
-
-# Wallet address
-SENDER_ADDRESS="0xYourWalletAddress"
-
-# API Keys for contract verification
-ETHERSCAN_API_KEY="your_etherscan_api_key"
-BASESCAN_API_KEY="your_basescan_api_key"
-
-# Chainlink Price Feed Addresses
-MONAD_PRICE_FEED="0x0c76859E85727683Eeba0C70Bc2e0F5781337818"
-BASE_MAINNET_PRICE_FEED="0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70"
+### Base Sepolia
+```
+GMR:          0x754f4Dd925226b223faD1cdC5A2777979c2Fb9A2
+Leaderboard:  0xb558b8a32915b2871A3a4Ca3Ea3fdFfc5912e0B5
+ResetStrikes: 0xF395fb9D88b1798EcA6c0d1C4a57335A12DB1608
+```
 BASE_SEPOLIA_PRICE_FEED="0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1"
 
 # Chain IDs

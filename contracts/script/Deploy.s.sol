@@ -20,7 +20,7 @@ contract Deploy is Script {
     // ============================================
     
     // DEPLOYER KEYSTORE NAME (must exist in ~/.foundry/keystores/)
-    string constant KEYSTORE_NAME = "deployer";
+    string constant KEYSTORE_NAME = "liminal-deployer";
     
     // API KEYS FOR VERIFICATION (HARDCODED - ADD YOUR KEYS HERE)
     string constant BASESCAN_API_KEY = "YOUR_BASESCAN_API_KEY_HERE";

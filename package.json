@@ -11,7 +11,11 @@
     "preview": "vite preview --host",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "validate:backend": "node scripts/validate-backend.mjs",
+    "health:check": "node scripts/health-check.mjs",
+    "health:watch": "node scripts/health-check.mjs --watch",
+    "authorize:backend": "./scripts/authorize-backend.sh"
   },
   "dependencies": {
     "@farcaster/auth-kit": "^0.8.1",

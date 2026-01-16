@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Context} from "./Context.sol";
+import {Errors} from "./Errors.sol";
 
 abstract contract Pausable is Context {
     event Paused(address account);
@@ -18,12 +19,12 @@ abstract contract Pausable is Context {
     }
 
     modifier whenNotPaused() {
-        require(!paused(), "Pausable: paused");
+        if (_paused) revert Errors.ContractPaused();
         _;
     }
 
     modifier whenPaused() {
-        require(paused(), "Pausable: not paused");
+        if (!_paused) revert Errors.ContractNotPaused();
         _;
     }
 
