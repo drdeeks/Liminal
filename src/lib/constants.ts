@@ -7,7 +7,7 @@ export const GAME_CONFIG = {
   JOKER_PROBABILITY: 0.25,
   RESET_STRIKES_COST_USD: 0.05,
   CONTINUE_COUNTDOWN_SECONDS: 3,
-} as const;
+};
 
 // Difficulty Scaling
 export const DIFFICULTY = {
