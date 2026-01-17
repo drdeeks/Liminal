@@ -14,7 +14,7 @@ import { SwipeMask } from '../components/ui/SwipeMask';
 import { AudioManager, AudioManagerHandle } from '../systems/AudioManager';
 import { Direction, getRandomDirection, GameState } from '../lib/types';
 import { GAME_CONFIG, ANIMATION, HAPTICS } from '../lib/constants';
-import { base } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 import { monadTestnet, contracts } from '../lib/contracts';
 import { parseEther } from 'viem';
 import { ChainSelector } from '../components/ui/ChainSelector';
@@ -58,7 +58,7 @@ const App: React.FC = () => {
         address: contracts.base.aggregatorV3.address,
         abi: contracts.base.aggregatorV3.abi,
         functionName: 'latestRoundData',
-        chainId: base.id,
+        chainId: baseSepolia.id,
     });
 
     const [gameState, setGameState] = useState<GameState>('menu');
@@ -169,7 +169,7 @@ const App: React.FC = () => {
 
     const handlePlayNow = () => {
         setScore(0);
-        setStrikes(GAME_CONFIG.INITIAL_STRIKES);
+        setStrikes(0);
         setIsScoreSubmitted(false);
         const randomIndex = Math.floor(Math.random() * INTRO_MESSAGES.length);
         setIntroMessage(INTRO_MESSAGES[randomIndex]);
@@ -183,7 +183,7 @@ const App: React.FC = () => {
 
     const handlePlayAgain = () => {
         setScore(0);
-        setStrikes(GAME_CONFIG.INITIAL_STRIKES);
+        setStrikes(0);
         setIsScoreSubmitted(false);
         startGame();
     };
@@ -198,7 +198,7 @@ const App: React.FC = () => {
 
     const handleGm = () => {
         if (!address || !activeChain) return;
-        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
+        const contractConfig = activeChain?.id === monadTestnet.id ? contracts.monad.gmr : contracts.base.gmr;
         if (!contractConfig.address) {
             console.error(`No GMR contract address found for chain ID ${activeChain.id}`);
             return;
@@ -216,14 +216,14 @@ const App: React.FC = () => {
 
     const handleResetStrikes = () => {
         if (!address || !activeChain) return;
-        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
+        const contractConfig = activeChain?.id === monadTestnet.id ? contracts.monad.resetStrikes : contracts.base.resetStrikes;
         if (!contractConfig.address) {
             console.error(`No ResetStrikes contract address found for chain ID ${activeChain.id}`);
             return;
         }
 
         let txValue = 0n;
-        if (activeChain.id === base.id && ethPriceData) {
+        if (activeChain?.id === baseSepolia.id && ethPriceData) {
             try {
                 const [, price, , ,] = ethPriceData as [bigint, bigint, bigint, bigint, bigint];
                 if (!price || price <= 0n) {
@@ -258,7 +258,7 @@ const App: React.FC = () => {
     };
 
     const handleContinue = () => {
-        setStrikes(GAME_CONFIG.INITIAL_STRIKES);
+        setStrikes(0);
         setGameState('playing');
         handleGenerateNewCard();
     };
@@ -271,7 +271,7 @@ const App: React.FC = () => {
             console.error('Invalid score value:', score);
             return;
         }
-        const contractConfig = activeChain.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
+        const contractConfig = activeChain?.id === monadTestnet.id ? contracts.monad.leaderboard : contracts.base.leaderboard;
         if (!contractConfig.address) {
             console.error(`No leaderboard contract address found for chain ID ${activeChain.id}`);
             return;

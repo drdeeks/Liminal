@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi'
-import { base } from 'wagmi/chains'
+import { baseSepolia } from 'wagmi/chains'
 import { injected } from 'wagmi/connectors'
 import { monadTestnet, monad } from './contracts'
 
@@ -7,10 +7,10 @@ import { monadTestnet, monad } from './contracts'
 export { monadTestnet, monad }
 
 export const config = createConfig({
-  chains: [base, monadTestnet],
+  chains: [baseSepolia, monadTestnet],
   connectors: [injected()], // Only injected connector for Farcaster
   transports: {
-    [base.id]: http(),
+    [baseSepolia.id]: http(),
     [monadTestnet.id]: http(),
   },
   ssr: false,
