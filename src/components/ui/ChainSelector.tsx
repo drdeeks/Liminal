@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { baseSepolia } from 'wagmi/chains';
-import { monadTestnet } from '../../lib/contracts';
+import { base, baseSepolia } from 'wagmi/chains';
+import { monadMainnet } from '../../lib/contracts';
 
 interface ChainSelectorProps {
-    activeChain: typeof baseSepolia | typeof monadTestnet | undefined;
+    activeChain: typeof base | typeof baseSepolia | typeof monadMainnet | undefined;
     switchChain: (params: { chainId: number }) => void;
 }
 
@@ -12,8 +12,9 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({ activeChain, switc
     const [isOpen, setIsOpen] = useState(false);
 
     const chains = [
-        { id: baseSepolia.id, name: 'Base Sepolia', color: 'from-blue-500 to-blue-600' },
-        { id: monadTestnet.id, name: 'Monad Testnet', color: 'from-purple-500 to-purple-600' },
+        { id: base.id, name: 'Base', color: 'from-blue-500 to-blue-600' },
+        { id: baseSepolia.id, name: 'Base Sepolia', color: 'from-blue-400 to-blue-500' },
+        { id: monadMainnet.id, name: 'Monad', color: 'from-purple-500 to-purple-600' },
     ];
 
     const selectedChain = chains.find(c => c.id === activeChain?.id);

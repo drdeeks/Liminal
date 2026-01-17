@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { leaderboardAbi, leaderboardAddress } from '../../lib/contracts';
-import { baseSepolia } from 'wagmi/chains';
-import { monadTestnet } from '../../lib/contracts';
+import { base, baseSepolia } from 'wagmi/chains';
+import { monadMainnet } from '../../lib/contracts';
 import { LeaderboardCard } from './LeaderboardCard';
 
 interface LeaderboardScreenProps {
@@ -30,7 +30,9 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
     const { chain } = useAccount();
     const [page, setPage] = useState(0);
 
-    const contractAddress = chain?.id === monadTestnet.id ? leaderboardAddress[monadTestnet.id] : leaderboardAddress[baseSepolia.id];
+    const contractAddress = chain?.id === monadMainnet.id ? leaderboardAddress[monadMainnet.id] : 
+                            chain?.id === baseSepolia.id ? leaderboardAddress[baseSepolia.id] : 
+                            leaderboardAddress[base.id];
 
     const { data: playerCountData, isLoading: isPlayerCountLoading, error: playerCountError } = useReadContract({
         address: contractAddress,

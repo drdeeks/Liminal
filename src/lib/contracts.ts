@@ -1,34 +1,39 @@
 // src/lib/contracts.ts
 import { base, baseSepolia } from 'viem/chains'
 
-// Custom Monad chain config
-export const monadTestnet = {
-  id: 10143,
-  name: 'Monad Testnet',
-  network: 'monad-testnet',
+// Monad Mainnet chain config
+export const monadMainnet = {
+  id: 34443,
+  name: 'Monad',
+  network: 'monad',
   nativeCurrency: {
     decimals: 18,
     name: 'Monad',
     symbol: 'MON',
   },
   rpcUrls: {
-    default: { http: ['https://testnet-rpc.monad.xyz'] },
-    public: { http: ['https://testnet-rpc.monad.xyz'] },
+    default: { http: ['https://rpc.monad.xyz'] },
+    public: { http: ['https://rpc.monad.xyz'] },
   },
   blockExplorers: {
-    default: { name: 'Monad Explorer', url: 'https://testnet-explorer.monad.xyz' },
+    default: { name: 'Monad Explorer', url: 'https://explorer.monad.xyz' },
   },
-  testnet: true,
+  testnet: false,
 } as const
 
-export const monad = monadTestnet
+export const monad = monadMainnet
 
-// Contract addresses - Base Sepolia (DEPLOYED)
+// Contract addresses - Base Mainnet (DEFAULT)
+const BASE_GMR = (import.meta.env.VITE_BASE_GMR_ADDRESS || '') as `0x${string}`
+const BASE_LEADERBOARD = (import.meta.env.VITE_BASE_LEADERBOARD_ADDRESS || '') as `0x${string}`
+const BASE_RESET_STRIKES = (import.meta.env.VITE_BASE_RESET_STRIKES_ADDRESS || '') as `0x${string}`
+
+// Contract addresses - Base Sepolia (FALLBACK)
 const BASE_SEPOLIA_GMR = '0x754f4Dd925226b223faD1cdC5A2777979c2Fb9A2' as `0x${string}`
 const BASE_SEPOLIA_LEADERBOARD = '0xb558b8a32915b2871A3a4Ca3Ea3fdFfc5912e0B5' as `0x${string}`
 const BASE_SEPOLIA_RESET_STRIKES = '0xF395fb9D88b1798EcA6c0d1C4a57335A12DB1608' as `0x${string}`
 
-// Monad Testnet (placeholder)
+// Monad Mainnet
 const MONAD_GMR = (import.meta.env.VITE_MONAD_GMR_ADDRESS || '') as `0x${string}`
 const MONAD_LEADERBOARD = (import.meta.env.VITE_MONAD_LEADERBOARD_ADDRESS || '') as `0x${string}`
 const MONAD_RESET_STRIKES = (import.meta.env.VITE_MONAD_RESET_STRIKES_ADDRESS || '') as `0x${string}`
@@ -155,17 +160,20 @@ export const gmrAbi = GMR_ABI
 export const resetStrikesAbi = RESET_STRIKES_ABI
 
 export const leaderboardAddress = {
-  [monadTestnet.id]: MONAD_LEADERBOARD,
+  [monadMainnet.id]: MONAD_LEADERBOARD,
+  [base.id]: BASE_LEADERBOARD,
   [baseSepolia.id]: BASE_SEPOLIA_LEADERBOARD,
 } as const
 
 export const gmrAddress = {
-  [monadTestnet.id]: MONAD_GMR,
+  [monadMainnet.id]: MONAD_GMR,
+  [base.id]: BASE_GMR,
   [baseSepolia.id]: BASE_SEPOLIA_GMR,
 } as const
 
 export const resetStrikesAddress = {
-  [monadTestnet.id]: MONAD_RESET_STRIKES,
+  [monadMainnet.id]: MONAD_RESET_STRIKES,
+  [base.id]: BASE_RESET_STRIKES,
   [baseSepolia.id]: BASE_SEPOLIA_RESET_STRIKES,
 } as const
 
@@ -176,11 +184,11 @@ export const contracts = {
     resetStrikes: { address: MONAD_RESET_STRIKES, abi: RESET_STRIKES_ABI },
   },
   base: {
-    gmr: { address: BASE_SEPOLIA_GMR, abi: GMR_ABI },
-    leaderboard: { address: BASE_SEPOLIA_LEADERBOARD, abi: leaderboardAbi },
-    resetStrikes: { address: BASE_SEPOLIA_RESET_STRIKES, abi: RESET_STRIKES_ABI },
+    gmr: { address: BASE_GMR, abi: GMR_ABI },
+    leaderboard: { address: BASE_LEADERBOARD, abi: leaderboardAbi },
+    resetStrikes: { address: BASE_RESET_STRIKES, abi: RESET_STRIKES_ABI },
     aggregatorV3: { 
-      address: '0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1' as `0x${string}`, 
+      address: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70' as `0x${string}`, 
       abi: [
         {
           name: 'latestRoundData',
@@ -202,5 +210,23 @@ export const contracts = {
     gmr: { address: BASE_SEPOLIA_GMR, abi: GMR_ABI },
     leaderboard: { address: BASE_SEPOLIA_LEADERBOARD, abi: leaderboardAbi },
     resetStrikes: { address: BASE_SEPOLIA_RESET_STRIKES, abi: RESET_STRIKES_ABI },
+    aggregatorV3: { 
+      address: '0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1' as `0x${string}`, 
+      abi: [
+        {
+          name: 'latestRoundData',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [],
+          outputs: [
+            { name: 'roundId', type: 'uint80' },
+            { name: 'answer', type: 'int256' },
+            { name: 'startedAt', type: 'uint256' },
+            { name: 'updatedAt', type: 'uint256' },
+            { name: 'answeredInRound', type: 'uint80' }
+          ],
+        }
+      ] as const
+    },
   },
 } as const
