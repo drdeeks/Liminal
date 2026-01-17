@@ -4,6 +4,88 @@ All notable changes and improvements to the Liminal game.
 
 ---
 
+## [2.2.0] - 2026-01-17 - Critical Bug Fixes & Improvements
+
+### 🐛 Critical Bug Fixes
+
+1. **Fixed Strikes Logic - Incorrect Direction**
+   - **Bug**: `handleIncorrectSwipe` was decreasing strikes (`prev - 1`) instead of increasing
+   - **Reproduction**: Make wrong swipe, strikes would go negative instead of increasing
+   - **Impact**: Game became unplayable - strikes went backwards
+   - **Fix**: Changed to `setStrikes(prev => prev + 1)` to properly increment strikes
+
+2. **Fixed Strikes Display Hidden When Wallet Connected**
+   - **Bug**: Strikes display was completely hidden when wallet connected, replaced with wallet info
+   - **Reproduction**: Connect wallet, start game - no strikes visible during gameplay
+   - **Impact**: Players couldn't see their strike count during critical gameplay
+   - **Fix**: Always show strikes display, add wallet info as secondary smaller text below
+
+3. **Fixed Empty Contract Address Handling**
+   - **Bug**: LeaderboardScreen would attempt queries with empty contract addresses
+   - **Reproduction**: Switch to Base mainnet without deployed contracts
+   - **Impact**: Failed contract calls, error messages, poor UX
+   - **Fix**: Added `hasValidAddress` check, skip queries if address length <= 2
+
+4. **Fixed Hardcoded Values - Used Constants**
+   - **Bug**: Multiple hardcoded values instead of using defined constants
+   - **Reproduction**: Game over at 3 strikes, reset cost $0.05 - values scattered in code
+   - **Impact**: Inconsistent behavior, hard to maintain
+   - **Fix**: Added `MAX_STRIKES` constant, use `RESET_STRIKES_COST_USD` throughout
+
+5. **Fixed Unused GameState Types**
+   - **Bug**: GameState included 'start' and 'countdown' states never used in logic
+   - **Reproduction**: TypeScript allowed invalid states in switch statements
+   - **Impact**: Potential runtime errors, confusing type definitions
+   - **Fix**: Removed unused states, kept only: 'howToPlay', 'playing', 'gameOver', 'leaderboard', 'menu'
+
+6. **Fixed Keyboard Input Not Resetting**
+   - **Bug**: `keyboardSwipeOutDirection` set but never reset, subsequent keyboard inputs ignored
+   - **Reproduction**: Use arrow keys twice quickly - second input doesn't work
+   - **Impact**: Keyboard controls become unresponsive after first use
+   - **Fix**: Reset `keyboardSwipeOutDirection` to null after 100ms timeout
+
+7. **Fixed Shake Animation Timeout Leak**
+   - **Bug**: Shake animation timeout not cleaned up on component unmount or rapid swipes
+   - **Reproduction**: Make multiple wrong swipes quickly or unmount during shake
+   - **Impact**: Memory leaks, potential state updates on unmounted components
+   - **Fix**: Track timeout ID in state, clear previous timeout before setting new one
+
+8. **Fixed Unused Function - Dead Code**
+   - **Bug**: `handleCountdownComplete` function defined but never called
+   - **Reproduction**: Code analysis shows unreachable function
+   - **Impact**: Dead code, confusion about countdown logic flow
+   - **Fix**: Removed unused function, countdown handled in useEffect
+
+9. **Fixed Price Calculation Hardcoded Value**
+   - **Bug**: Reset strikes price used hardcoded `0.05` instead of `GAME_CONFIG.RESET_STRIKES_COST_USD`
+   - **Reproduction**: Change RESET_STRIKES_COST_USD constant - price calculation unchanged
+   - **Impact**: Price inconsistency, config changes ignored
+   - **Fix**: Use `GAME_CONFIG.RESET_STRIKES_COST_USD` in price calculation
+
+10. **Fixed Contract Address Validation**
+    - **Bug**: Contract queries enabled with empty string addresses from environment variables
+    - **Reproduction**: Missing environment variables cause empty addresses, queries still attempted
+    - **Impact**: Failed contract calls, console errors, poor error handling
+    - **Fix**: Validate address length > 2 before enabling contract queries
+
+### 🔧 Technical Improvements
+
+- Added `MAX_STRIKES` constant for consistency
+- Improved timeout cleanup patterns
+- Enhanced contract address validation
+- Better keyboard input handling
+- Cleaner state management
+
+### ✅ Verification
+
+- All 26 tests passing
+- Build successful (1m 38s)
+- No TypeScript errors
+- Memory leak prevention
+- Proper cleanup on unmount
+
+---
+
 ## [2.1.5] - 2026-01-16 - Bug Fixes Round 3
 
 ### 🐛 Bug Fixes

@@ -1,4 +1,4 @@
-export type GameState = 'start' | 'howToPlay' | 'countdown' | 'playing' | 'gameOver' | 'leaderboard' | 'menu';
+export type GameState = 'howToPlay' | 'playing' | 'gameOver' | 'leaderboard' | 'menu';
 
 export enum Direction {
   Up,

@@ -34,11 +34,14 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
                             chain?.id === baseSepolia.id ? leaderboardAddress[baseSepolia.id] : 
                             leaderboardAddress[base.id];
 
+    // Skip queries if no valid contract address
+    const hasValidAddress = contractAddress && contractAddress.length > 2;
+
     const { data: playerCountData, isLoading: isPlayerCountLoading, error: playerCountError } = useReadContract({
         address: contractAddress,
         abi: leaderboardAbi,
         functionName: 'getPlayerCount',
-        query: { enabled: !!contractAddress },
+        query: { enabled: hasValidAddress },
     });
 
     const { data: leaderboardData, isLoading: isLeaderboardLoading, error: leaderboardError } = useReadContract({
@@ -46,7 +49,7 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
         abi: leaderboardAbi,
         functionName: 'getLeaderboard',
         args: [BigInt(page), BigInt(PAGE_SIZE)],
-        query: { enabled: !!contractAddress },
+        query: { enabled: hasValidAddress },
     });
 
     const playerCount = playerCountData ? Number(playerCountData) : 0;

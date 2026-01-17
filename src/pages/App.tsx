@@ -80,7 +80,7 @@ const App: React.FC = () => {
     const [isScoreSubmitted, setIsScoreSubmitted] = useState(false);
 
     useEffect(() => {
-        if (strikes >= 3 && gameState === 'playing') {
+        if (strikes >= GAME_CONFIG.MAX_STRIKES && gameState === 'playing') {
             setGameState('gameOver');
         }
     }, [strikes, gameState]);
@@ -147,9 +147,13 @@ const App: React.FC = () => {
         handleGenerateNewCard();
     }, [handleGenerateNewCard]);
 
+    const [shakeTimeoutId, setShakeTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
     const handleIncorrectSwipe = useCallback(() => {
         if (cardTimerId.current) clearTimeout(cardTimerId.current);
-        setStrikes(prev => prev - 1);
+        if (shakeTimeoutId) clearTimeout(shakeTimeoutId);
+        
+        setStrikes(prev => prev + 1);
         setShake(true);
         if (gameState === 'playing') {
             setFlash(true);
@@ -159,9 +163,10 @@ const App: React.FC = () => {
             setTimeout(() => setFlash(false), ANIMATION.FLASH_DURATION);
         }
         audioManager.current?.playWrongSwipe();
-        setTimeout(() => setShake(false), ANIMATION.SHAKE_DURATION);
+        const newShakeTimeout = setTimeout(() => setShake(false), ANIMATION.SHAKE_DURATION);
+        setShakeTimeoutId(newShakeTimeout);
         handleGenerateNewCard();
-    }, [handleGenerateNewCard, gameState]);
+    }, [handleGenerateNewCard, gameState, shakeTimeoutId]);
 
     const startGame = () => {
         setGameState('howToPlay');
@@ -174,11 +179,6 @@ const App: React.FC = () => {
         const randomIndex = Math.floor(Math.random() * INTRO_MESSAGES.length);
         setIntroMessage(INTRO_MESSAGES[randomIndex]);
         setEntranceState('sentence');
-    };
-
-    const handleCountdownComplete = () => {
-        setGameState('playing');
-        setGameStartTime(performance.now());
     };
 
     const handlePlayAgain = () => {
@@ -233,7 +233,7 @@ const App: React.FC = () => {
                     return;
                 }
                 const ethPriceInUsd = Number(price) / 1e8;
-                const costInUsd = 0.05;
+                const costInUsd = GAME_CONFIG.RESET_STRIKES_COST_USD;
                 const costInEth = costInUsd / ethPriceInUsd;
                 
                 if (!isFinite(costInEth) || costInEth <= 0) {
@@ -325,8 +325,11 @@ const App: React.FC = () => {
             if (cardTimerId.current) {
                 clearTimeout(cardTimerId.current);
             }
+            if (shakeTimeoutId) {
+                clearTimeout(shakeTimeoutId);
+            }
         };
-    }, [cardTimerId]);
+    }, [cardTimerId, shakeTimeoutId]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -343,6 +346,8 @@ const App: React.FC = () => {
 
             if (swipedDir !== null) {
                 setKeyboardSwipeOutDirection(swipedDir);
+                // Reset after a short delay to allow for next input
+                setTimeout(() => setKeyboardSwipeOutDirection(null), 100);
             }
         };
 
@@ -499,24 +504,23 @@ const App: React.FC = () => {
                         )}
                     </div>
                     <div className="text-shadow-pop text-right flex-1">
-                        {isConnected && address ? (
-                            <div className="flex flex-col items-end gap-1">
+                        <div className="flex flex-col items-end">
+                            <span className="text-white/70 text-lg font-semibold block">STRIKES</span>
+                            <p className="text-3xl">{strikes}/{GAME_CONFIG.MAX_STRIKES}</p>
+                        </div>
+                        {isConnected && address && (
+                            <div className="flex flex-col items-end gap-1 mt-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-white/50">{activeChain?.name || 'Unknown'}</span>
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                                 </div>
-                                <span className="text-white/90 text-sm font-mono">{address.slice(0, 6)}...{address.slice(-4)}</span>
+                                <span className="text-white/90 text-xs font-mono">{address.slice(0, 6)}...{address.slice(-4)}</span>
                                 <button
                                     className="text-white/50 hover:text-white transition-colors text-xs"
                                     onClick={() => disconnect()}
                                 >
                                     Disconnect
                                 </button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-end">
-                                <span className="text-white/70 text-lg font-semibold block">STRIKES</span>
-                                <p className="text-3xl">{strikes}/3</p>
                             </div>
                         )}
                     </div>
