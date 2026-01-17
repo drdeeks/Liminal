@@ -80,7 +80,7 @@ const App: React.FC = () => {
     const [isScoreSubmitted, setIsScoreSubmitted] = useState(false);
 
     useEffect(() => {
-        if (strikes === 0 && gameState === 'playing') {
+        if (strikes < 0 && gameState === 'playing') {
             setGameState('gameOver');
         }
     }, [strikes, gameState]);
@@ -90,6 +90,12 @@ const App: React.FC = () => {
             setIsScoreSubmitted(true);
         }
     }, [isConfirmed]);
+
+    useEffect(() => {
+        if (isResetStrikesSuccess) {
+            setStrikes(3);
+        }
+    }, [isResetStrikesSuccess]);
 
     const [isSdkLoaded, setIsSdkLoaded] = useState(false);
 
@@ -158,6 +164,13 @@ const App: React.FC = () => {
     }, [handleGenerateNewCard, gameState]);
 
     const startGame = () => {
+        if (!isConnected) {
+            const connector = connectors[0];
+            if (connector) {
+                connect({ connector });
+            }
+            return;
+        }
         setGameState('howToPlay');
     };
 
@@ -506,7 +519,7 @@ const App: React.FC = () => {
                         ) : (
                             <div className="flex flex-col items-end">
                                 <span className="text-white/70 text-lg font-semibold block">STRIKES</span>
-                                <p className="text-3xl">{strikes}/{GAME_CONFIG.INITIAL_STRIKES}</p>
+                                <p className="text-3xl">{Math.max(0, strikes)}/3</p>
                             </div>
                         )}
                     </div>

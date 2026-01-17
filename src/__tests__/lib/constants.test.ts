@@ -4,8 +4,8 @@ import { GAME_CONFIG, DIFFICULTY, ANIMATION, INPUT, HAPTICS, PERFORMANCE } from 
 describe('constants', () => {
   describe('GAME_CONFIG', () => {
     it('has valid initial strikes', () => {
-      expect(GAME_CONFIG.INITIAL_STRIKES).toBe(3);
-      expect(GAME_CONFIG.INITIAL_STRIKES).toBeGreaterThan(0);
+      expect(GAME_CONFIG.INITIAL_STRIKES).toBe(0);
+      expect(GAME_CONFIG.INITIAL_STRIKES).toBeGreaterThanOrEqual(0);
     });
 
     it('has valid card timing', () => {

@@ -7,7 +7,7 @@ interface StrikesDisplayProps {
 const MAX_STRIKES = 3;
 
 export const StrikesDisplay: React.FC<StrikesDisplayProps> = ({ strikes }) => {
-  const strikesUsed = MAX_STRIKES - strikes;
+  const strikesUsed = MAX_STRIKES - Math.max(0, strikes);
   
   if (strikesUsed === 0) {
     return null;
