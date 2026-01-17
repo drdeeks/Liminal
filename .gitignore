@@ -63,3 +63,5 @@ jules-scratch/
 before-assertion.png
 *.bak
 .cache/
+.vercel
+.env*.local
