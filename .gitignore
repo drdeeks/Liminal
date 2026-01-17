@@ -1,67 +1,41 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 # Dependencies
 node_modules/
 package-lock.json
-foundry.lock
 
 # Build artifacts
-dist
-dist-ssr
+dist/
+dist-ssr/
 *.tsbuildinfo
 
-# Local environment files
+# Environment files
 .env*
 !.env.example
 
-# Editor directories and files
+# Development
 .vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.log
+*.bak
+.cache/
 
 # Foundry
 broadcast/
 contracts/out/
 contracts/cache/
 contracts/lib/
+foundry.lock
 
 # Keystore
 /keystores/
 *.keystore
 
-# Test results
+# Testing
 /test-results/
 /playwright-report/
 /coverage/
 
-# Documentation (keep only essential)
-IMPROVEMENTS.md
-ARCHITECTURE.md
-TESTING.md
-RESET_STRIKES_IMPLEMENTATION.md
-VISUAL_GUIDE.md
-REFACTORING_SUMMARY.md
-QUICK_REFERENCE.md
-CHAOS_VISUAL_GUIDE.md
-CLEANUP.md
-
-# Development
-jules-scratch/
-before-assertion.png
-*.bak
-.cache/
-.vercel
+# Vercel
+.vercel/
 .env*.local
