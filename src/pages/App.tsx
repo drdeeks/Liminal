@@ -274,8 +274,8 @@ const App: React.FC = () => {
         writeContract({
             address: contractConfig.address,
             abi: contractConfig.abi,
-            functionName: 'submitScore',
-            args: [BigInt(score)],
+            functionName: 'updateScore',
+            args: [address, BigInt(score)],
             chain: activeChain,
             account: address,
         });

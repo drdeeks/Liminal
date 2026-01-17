@@ -49,19 +49,14 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) 
 
     const playerCount = playerCountData ? Number(playerCountData) : 0;
     const leaderboard: Player[] = leaderboardData ? (() => {
-        const [addresses, scores] = leaderboardData as [string[], bigint[]];
-        if (addresses.length !== scores.length) {
-            console.error('Leaderboard data mismatch: addresses and scores arrays have different lengths');
-            return [];
-        }
-        return addresses.map((address, i) => {
-            const score = scores[i];
-            if (score > Number.MAX_SAFE_INTEGER) {
-                console.warn(`Score ${score} exceeds MAX_SAFE_INTEGER, precision may be lost`);
+        const entries = leaderboardData as readonly { user: `0x${string}`; score: bigint; }[];
+        return entries.map((entry) => {
+            if (entry.score > Number.MAX_SAFE_INTEGER) {
+                console.warn(`Score ${entry.score} exceeds MAX_SAFE_INTEGER, precision may be lost`);
             }
             return {
-                address,
-                score: Number(score),
+                address: entry.user,
+                score: Number(entry.score),
             };
         }).sort((a, b) => b.score - a.score);
     })() : [];

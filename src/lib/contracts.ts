@@ -43,6 +43,16 @@ const GMR_ABI = [
     outputs: [],
   },
   {
+    name: 'mint',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [],
+  },
+  {
     name: 'paused',
     type: 'function',
     stateMutability: 'view',
@@ -96,6 +106,32 @@ export const leaderboardAbi = [
     inputs: [{ name: '', type: 'address' }],
     outputs: [{ name: '', type: 'bool' }],
   },
+  {
+    name: 'getPlayerCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'getLeaderboard',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'page', type: 'uint256' },
+      { name: 'pageSize', type: 'uint256' }
+    ],
+    outputs: [
+      { 
+        name: '', 
+        type: 'tuple[]',
+        components: [
+          { name: 'user', type: 'address' },
+          { name: 'score', type: 'uint256' }
+        ]
+      }
+    ],
+  },
 ] as const
 
 const RESET_STRIKES_ABI = [
@@ -138,6 +174,29 @@ export const contracts = {
     gmr: { address: MONAD_GMR, abi: GMR_ABI },
     leaderboard: { address: MONAD_LEADERBOARD, abi: leaderboardAbi },
     resetStrikes: { address: MONAD_RESET_STRIKES, abi: RESET_STRIKES_ABI },
+  },
+  base: {
+    gmr: { address: BASE_SEPOLIA_GMR, abi: GMR_ABI },
+    leaderboard: { address: BASE_SEPOLIA_LEADERBOARD, abi: leaderboardAbi },
+    resetStrikes: { address: BASE_SEPOLIA_RESET_STRIKES, abi: RESET_STRIKES_ABI },
+    aggregatorV3: { 
+      address: '0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1' as `0x${string}`, 
+      abi: [
+        {
+          name: 'latestRoundData',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [],
+          outputs: [
+            { name: 'roundId', type: 'uint80' },
+            { name: 'answer', type: 'int256' },
+            { name: 'startedAt', type: 'uint256' },
+            { name: 'updatedAt', type: 'uint256' },
+            { name: 'answeredInRound', type: 'uint80' }
+          ],
+        }
+      ] as const
+    },
   },
   baseSepolia: {
     gmr: { address: BASE_SEPOLIA_GMR, abi: GMR_ABI },
